@@ -31,6 +31,7 @@ import {
 import './App.css';
 
 import Home from './Home';
+import { defaultMapNames } from './defaultMapNames';
 
 // import safeSpace from 'safe-space';
 // import dangerSpace from 'danger-space';
@@ -38,7 +39,7 @@ import Home from './Home';
 var host = window.location.hostname;
 const socket = io('http://' + host + ':5000');
 
-function Editor() {
+function Editor(props) {
   const [spaceOptions, setSpaceOptions] = useState([
     {label: '1 - Safe', value: 'safe', color: 'white', numTiles: 0, maxTiles: -1},
     {label: '2 - Dangerous', value: 'dangerous', color: 'grey', numTiles: 0, maxTiles: -1},
@@ -71,22 +72,12 @@ function Editor() {
 
   // client-side
   useEffect(() => {
+    console.log(defaultMapNames);
     //setMapEditorMap(generateMapEditor());
     socket.on("connect", () => {  console.log(socket.id); });
     socket.on("responseMessage", (data) => {  console.log(data); });
     socket.on("emitMapList", (data) => {
       let _mapOptions = [...mapOptions];
-      console.log('===== MAP LIST DATA =====');
-      console.log(data);
-      console.log('=========================')
-      // for (let [key, value] of Object.entries(data)) {
-      //   _mapOptions.push({label: key, value: value});
-      // }
-      // data.forEach((map) => {
-      //   _mapOptions.push({label: map.name, value: map});
-      // });
-      // console.log(_mapOptions);
-      //setMapOptions(_mapOptions);
       setMapOptions([{label: 'New', value: {tiles: [], meta: {safe: 0, dangerous: 0, hspawn: 0, aspawn: 0, escapepod: 0, remove: 0}}}, ...data]);
     });
 
@@ -111,14 +102,7 @@ function Editor() {
       delete updatedMap.tiles[oldTile];
       delete mapSelection.value.tiles[oldTile];
     } else {
-      //spaceSelector.numTiles += 1;
-      //spaceOptions.map(space => space.value === spaceSelector.value).numTiles = spaceSelector.numTiles;
       const updatedSpaceOptions = [...spaceOptions];
-      // const space_id = updatedSpaceOptions.map((space, idx) => {
-      //   if (space.value === spaceSelector.value) {
-      //     return idx;
-      //   }
-      // })[0];
       const space_id = Object.keys(updatedSpaceOptions).find(space => updatedSpaceOptions[space].value === spaceSelector.value);
       spaceSelector.numTiles += 1;
       updatedSpaceOptions[space_id].numTiles = spaceSelector.numTiles;
@@ -129,13 +113,7 @@ function Editor() {
     e.currentTarget.setAttrs({
       fill: spaceSelector.color
     });
-    // setNewMap({
-    //   ...newMap,
-    //   [id]: {
-    //     tileType: spaceSelector.value,
-    //     color: spaceSelector.color,
-    //   }
-    // });
+
     updatedMap.tiles[id] = {
         tileType: spaceSelector.value,
         color: spaceSelector.color,
@@ -431,7 +409,17 @@ function Editor() {
               marginTop: '1em'
             }}
             onClick={(e) => {
-              const newMapName = prompt('Save new map as: ', `Map${mapOptions.length}`);
+              //const newMapName = prompt('Save new map as: ', `Map${mapOptions.length}`);
+              const currentMapNames = mapOptions.map((_map) => { return _map.label; } );
+              let defaultMapName = defaultMapNames.filter(_map => currentMapNames.indexOf(_map) === -1);
+              let nameLoopCount = 1;
+              let defaultMapNamesUpdated = defaultMapNames;
+              while (defaultMapName.length === 0) {
+                nameLoopCount += 1;
+                defaultMapNamesUpdated = defaultMapNames.map((_map) => { return `${_map}-${nameLoopCount}` });
+                defaultMapName = defaultMapNamesUpdated.filter(_map => currentMapNames.indexOf(_map) === -1);
+              }
+              const newMapName = prompt('Save new map as: ', `${defaultMapName[0]}`);
               let meta = {};
               spaceOptions.map((space) => { meta[space.value] = space.numTiles});
               console.log(meta);
@@ -441,7 +429,7 @@ function Editor() {
               setMapOptions(mapOptions);
               setMapSelection(mapOptions.at(-1));
               //socket.emit('save', {[newMapName]: {...newMap, meta: meta}});
-              socket.emit('save', {'mapName': newMapName, ...newMap, meta: meta});
+              socket.emit('save', {'mapName': newMapName, ...newMap, meta: meta, user: props.userName});
               setUnsavedChanges(false);
             }}
           >
@@ -456,7 +444,7 @@ function Editor() {
               marginTop: '1em'
             }}
             onClick={(e) => {
-              socket.emit('save', {mapName: mapSelection.label, ...newMap});
+              socket.emit('save', {mapName: mapSelection.label, ...newMap, user: props.userName});
               setMapOptions(mapOptions.map((map => {
                 if (mapSelection.label === map.label) {
                   return {label: mapSelection.label, value: newMap}

@@ -66,7 +66,7 @@ function App() {
           <Route path='/' exact element={<Home />} />
         </Routes>
         <Routes>
-          <Route path='/editor' element={<Editor />} />
+          <Route path='/editor' element={<Editor userName={userName}/>} />
         </Routes>
       </Router>
 
