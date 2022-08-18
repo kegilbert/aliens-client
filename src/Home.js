@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import Select from 'react-select';
 
-import home_bg from './imgs/space-2.jpg';
+import home_bg from './imgs/hex-bg-2.png';
 
 const Home = (props) => {
   // Calling the function on component mount
@@ -27,7 +27,7 @@ const Home = (props) => {
     <Container fluid>
       <Row xs='12' style={{display: 'flex', justifyContent: 'center'}}>
         <Col xs='12' style={{display: 'flex', justifyContent: 'center'}}>
-          <img src={home_bg} alt="home-bg" style={{height: `${window.innerHeight * 0.95}px`, width: `${window.innerWidth}px`}}/>;
+          <img src={home_bg} alt="home-bg" style={{height: `${window.innerHeight * 0.95}px`, width: null}}/>; {/* width: `${window.innerWidth}px` */}
         </Col>
       </Row>
     </Container>

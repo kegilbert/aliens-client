@@ -36,3 +36,101 @@
     transform: rotate(360deg);
   }
 }
+
+/*html {*/
+:root {
+  --color-text: black;
+  --color-background: #282c34;
+  --color-primary: #c1ffd7;
+  --color-seconday: #e1eedd;
+  --color-info: #d1e8e2;
+  --color-warning: #f0a967;
+  --color-danger: #ff6961;
+  --color-error: #ff6961;
+}
+
+
+.genericButton {
+  color: black;
+  box-shadow: none !important;
+}
+
+.genericButton:hover, .genericButton:focus, .genericButton:disabled  {
+  color: black;
+  box-shadow: none !important;
+}
+
+.genericButton:active {
+  color: black;
+  box-shadow: none !important;
+  filter: brightness(.9);
+}
+
+
+.primaryButton {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: black;
+  box-shadow: none !important;
+}
+
+.primaryButton:hover, .primaryButton:focus, .primaryButton:disabled  {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: black;
+  box-shadow: none !important;
+}
+
+.primaryButton:active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: black;
+  box-shadow: none !important;
+  filter: brightness(.9);
+}
+
+.warningButton {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: black;
+  box-shadow: none !important;
+}
+
+.warningButton:hover, .warningButton:focus, .warningButton:disabled {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: black;
+  box-shadow: none !important;
+}
+
+
+.warningButton:active {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: black;
+  box-shadow: none !important;
+  filter: brightness(0.9);
+}
+
+.dangerButton {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: black;
+  box-shadow: none !important;
+}
+
+.dangerButton:hover, .dangerButton:focus, .dangerButton:disabled {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: black;
+  box-shadow: none !important;
+}
+
+
+.dangerButton:active {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: black;
+  box-shadow: none !important;
+  filter: brightness(0.9);
+}

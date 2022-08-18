@@ -1,0 +1,49 @@
+/*.table {
+    table-layout: fixed;
+}*/
+
+
+@keyframes new-row-glow {
+  /* You could think of as "step 1" */
+  0% {
+    background: orange;
+  }
+  /* You could think of as "step 2" */
+  100% {
+    background: transparent;
+  }
+}
+
+
+@-webkit-keyframes new-row {
+  0% { background-color: inherit; }
+  50% { background-color: #c1ffd7; }
+  100% { background-color: inherit; }
+}
+@-moz-keyframes new-row {
+  0% { background-color: inherit; }
+  50% { background-color: #c1ffd7; }
+  100% { background-color: inherit; }
+}
+@-o-keyframes new-row {
+  0% { background-color: inherit; }
+  50% { background-color: #c1ffd7; }
+  100% { background-color: inherit; }
+}
+@keyframes new-row {
+  0% { background-color: inherit; }
+  50% { background-color: #c1ffd7; }
+  100% { background-color: inherit; }
+}
+.new-row {
+  -webkit-animation: new-row 1s 2;/*infinite;*/ /* Safari 4+ */
+  -moz-animation:    new-row 1s 2;/*infinite;*/ /* Fx 5+ */
+  -o-animation:      new-row 1s 2;/*infinite;*/ /* Opera 12+ */
+  animation:         new-row 1s 2;/*infinite;*/ /* IE 10+ */
+}
+.new-row-short {
+  -webkit-animation: new-row 1s 1;/*infinite;*/ /* Safari 4+ */
+  -moz-animation:    new-row 1s 1;/*infinite;*/ /* Fx 5+ */
+  -o-animation:      new-row 1s 1;/*infinite;*/ /* Opera 12+ */
+  animation:         new-row 1s 1;/*infinite;*/ /* IE 10+ */
+}

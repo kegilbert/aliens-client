@@ -20,28 +20,72 @@ import {
   IoPersonCircleOutline,
   IoPencil
 } from 'react-icons/io5'; // MIT Licensed icons
+import SlidingPanel from 'react-sliding-side-panel';
+
 
 import './App.css';
+import 'react-sliding-side-panel/lib/index.css';
 
 import Home from './Home';
 import Editor from './Editor';
-
+import Lobbies from './Lobbies';
+import Lobby from './Lobby';
 
 // import safeSpace from 'safe-space';
 // import dangerSpace from 'danger-space';
 
 var host = window.location.hostname;
-const socket = io('http://' + host + ':5000');
+const socket = io('http://' + host + ':5069');
 
 function App() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [userName, setUserName] = useState('Kevin');
   const [tempUserName, setTempUserName] = useState(userName);
+  const [lobbySearchInput, setLobbySearchInput] = useState('');
+  const [lobbyId, setLobbyId] = useState('');
+  const [lobby, setLobby] = useState();
+  const [lobbies, setLobbies] = useState([]); 
+  const [openLobbyPanel, setOpenLobbyPanel] = useState(false);
+  const [newMap, setNewMap] = useState({tiles: {}, meta: {}});
+  const [mapOptions, setMapOptions] = useState([
+    {label: 'New', value: newMap}
+  ]);
+  const [mapEditorSelection, setMapEditorSelection] = useState(mapOptions[0]);
+  const [lobbyMapSelection, setLobbyMapSelection] = useState(mapOptions[0]);
 
 
   const handleUserModalClose = () => {
     setShowUserModal(false);
   }
+
+  /**
+   *  Pagge load useEffect
+   */
+  useEffect(() => {
+    socket.on("emitMapList", (data) => {
+      let _mapOptions = [...mapOptions];
+      setMapOptions([{label: 'New', value: {tiles: [], meta: {safe: 0, dangerous: 0, hspawn: 0, aspawn: 0, escapepod: 0, remove: 0}}}, ...data]);
+    });
+    socket.on('lobbiesList', (data) => {
+      console.log(data);
+      setLobbies(data);
+    });
+
+    socket.emit('getLobbies', {});
+    socket.emit('getMapList', {});
+  }, []);
+
+
+  useEffect(() => {
+    if (lobbyId !== '') {
+      setLobby(lobbies.filter((lobby) => lobby.lobbyId === lobbyId)[0]);
+    }
+  }, [lobbies]);
+
+
+  useEffect(() => {
+    console.log(lobby);
+  }, [lobby]);
 
 
   return (
@@ -54,19 +98,53 @@ function App() {
             <Nav activeKey={window.location.pathname} fill className="me-auto">
               <Nav.Link as={NavLink} style={{color: 'orange'}} activeStyle={{textDecoration: 'underline', textDecorationThickness: '0.2em', textUnderlineOffset: '0.5em'}} exact to="/">| Home | </Nav.Link>
               <Nav.Link as={NavLink} style={{color: 'orange'}} activeStyle={{textDecoration: 'underline', textDecorationThickness: '0.2em', textUnderlineOffset: '0.5em'}} to="/editor">| Map Editor | </Nav.Link>
+              <Nav.Link as={NavLink} style={{color: 'orange'}} activeStyle={{textDecoration: 'underline', textDecorationThickness: '0.2em', textUnderlineOffset: '0.5em'}} to="/lobbies">| Lobbies | </Nav.Link>
             </Nav>
-            <Navbar.Brand onClick={(e) => {setShowUserModal(true);}} style={{marginTop: '-1em', marginBottom: '-1em', marginRight: '0em'}}>
-              <IoPersonCircleOutline size={42}/>
+            <Navbar.Brand style={{marginTop: '-1em', marginBottom: '-1em', marginRight: '0em'}}>
+              {
+                lobbyId.length > 0 ?
+                  <span style={{color: 'orange', fontSize: '0.8em', marginRight: '1em', cursor: 'pointer'}} onClick={() => {setOpenLobbyPanel(true)}}>
+                    | Current Lobby |
+                  </span> :
+                  <div />
+              }
+              <IoPersonCircleOutline size={42} style={{cursor: 'pointer'}} onClick={(e) => {setShowUserModal(true);}} />
             </Navbar.Brand>
           </Navbar.Collapse>
           </Container>
-
         </Navbar>
         <Routes>
           <Route path='/' exact element={<Home />} />
         </Routes>
         <Routes>
-          <Route path='/editor' element={<Editor userName={userName}/>} />
+          <Route path='/editor' element={
+            <Editor
+              userName={userName}
+              newMap={newMap}
+              setNewMap={setNewMap}
+              mapOptions={mapOptions}
+              setMapOptions={setMapOptions}
+              mapSelection={mapEditorSelection}
+              setMapSelection={setMapEditorSelection}
+              socket={socket}
+            />
+          }/>
+        </Routes>
+        <Routes>
+          <Route path='/lobbies' element={
+            <Lobbies
+              userName={userName}
+              searchInput={lobbySearchInput}
+              lobbies={lobbies}
+              lobby={lobby}
+              setLobby={setLobby}
+              setSearchInput={setLobbySearchInput}
+              lobbyId={lobbyId}
+              setLobbyId={setLobbyId}
+              setOpenLobbyPanel={setOpenLobbyPanel}
+              socket={socket}
+            />
+          }/>
         </Routes>
       </Router>
 
@@ -100,7 +178,33 @@ function App() {
             Save Changes
           </Button>
         </Modal.Footer>
-      </Modal> 
+      </Modal>
+
+        <SlidingPanel
+          type='bottom'
+          isOpen={openLobbyPanel}
+          backdropClicked={() => setOpenLobbyPanel(false)}
+          noBackdrop={false}
+          size={ 85 }
+        >
+          <div style={{overflow: 'scroll', backgroundColor: `var(--color-seconday)`, height: '100%', paddingBottom: '5em', opacity: '100%'}}>
+            <Lobby
+              setOpenLobbyPanel={setOpenLobbyPanel}
+              lobbyId={lobbyId}
+              setLobbyId={setLobbyId}
+              lobby={lobby}
+              setLobby={setLobby}
+              mapOptions={mapOptions}
+              setMapOptions={setMapOptions}
+              newMap={newMap}
+              setNewMap={setNewMap}
+              lobbyMapSelection={lobbyMapSelection}
+              setLobbyMapSelection={setLobbyMapSelection}
+              socket={socket}
+            /> 
+          </div>
+        </SlidingPanel>
+
     </div>
   );
 }
