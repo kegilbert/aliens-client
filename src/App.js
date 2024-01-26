@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, NavLink } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   Modal,
   Navbar,
@@ -30,16 +30,18 @@ import Home from './Home';
 import Editor from './Editor';
 import Lobbies from './Lobbies';
 import Lobby from './Lobby';
+import GameSession from './GameSession';
 
 // import safeSpace from 'safe-space';
 // import dangerSpace from 'danger-space';
-
+  
 var host = window.location.hostname;
 const socket = io('http://' + host + ':5069');
 
+
 function App() {
   const [showUserModal, setShowUserModal] = useState(false);
-  const [userName, setUserName] = useState('Kevin');
+  const [userName, setUserName] = useState('');
   const [tempUserName, setTempUserName] = useState(userName);
   const [lobbySearchInput, setLobbySearchInput] = useState('');
   const [lobbyId, setLobbyId] = useState('');
@@ -51,10 +53,20 @@ function App() {
     {label: 'New', value: newMap}
   ]);
   const [mapEditorSelection, setMapEditorSelection] = useState(mapOptions[0]);
-  const [lobbyMapSelection, setLobbyMapSelection] = useState(mapOptions[0]);
+  const [lobbyMapSelection, setLobbyMapSelection] = useState(null);
+  const [gameCodeId, setGameCodeId] = useState('');
+  const [role, setRole] = useState('');
+  const [newUsernameUnavailable, setNewUsernameUnavailable] = useState(false);
+
+
+  const lobbyRef = useRef(lobby);
+  const tempUserNameRef = useRef(tempUserName);
+
+  const navigate = useNavigate();
 
 
   const handleUserModalClose = () => {
+    setNewUsernameUnavailable(false);
     setShowUserModal(false);
   }
 
@@ -62,17 +74,70 @@ function App() {
    *  Pagge load useEffect
    */
   useEffect(() => {
-    socket.on("emitMapList", (data) => {
+    setTempUserName(window.localStorage.getItem('username'));
+    setUserName(window.localStorage.getItem('username'));
+
+    socket.on('emitMapList', (data) => {
       let _mapOptions = [...mapOptions];
       setMapOptions([{label: 'New', value: {tiles: [], meta: {safe: 0, dangerous: 0, hspawn: 0, aspawn: 0, escapepod: 0, remove: 0}}}, ...data]);
     });
     socket.on('lobbiesList', (data) => {
-      console.log(data);
       setLobbies(data);
     });
 
-    socket.emit('getLobbies', {});
-    socket.emit('getMapList', {});
+    socket.on('playerEvent', (data) => {
+      console.log(data);
+    });
+
+    socket.on('roomEvent', (data) => {
+      console.log(data);
+    });
+
+    // socket.on('lobbyPlayerJoin', (data) => {
+    //   let updated_lobby = {...lobbyRef.current};
+    //   updated_lobby.players.push({playerName: data.playerName, playerReady: false});
+    //   setLobby(updated_lobby);
+    // });
+
+    // socket.on('lobbyPlayerReadyUpdate', (data) => {
+    //   let updated_lobby = {...lobbyRef.current};
+    //   updated_lobby.players[data.playerIdx].playerReady = data.playerReady;
+    //   setLobby(updated_lobby);
+    // });
+
+    socket.on('roleAssignment', (data) => {
+      setRole(data.role);
+    });
+
+    socket.on('usernameRegistered', (data) => {
+      console.log('REGISTER SUCCESSFUL');
+      console.log(tempUserNameRef.current);
+      setUserName(tempUserNameRef.current);
+      window.localStorage.setItem('username', tempUserNameRef.current);
+      handleUserModalClose();
+    });
+
+    socket.on('usernameUnavailable', (data) => {
+      setNewUsernameUnavailable(true);
+    });
+
+    socket.on("gameStartResp", (data) => {
+      setOpenLobbyPanel(false);
+      navigate(`/gamesession/${lobbyRef.current.lobbyId}`, {replace: true});
+    });
+
+    socket.on('connect', (data) => {
+      socket.emit('getLobbies', {});
+      socket.emit('getMapList', {});
+    });
+    /**
+     *  Set delay to ensure socket handshake has time to complete before sending data 
+     */
+    // setTimeout(function() {
+    //   socket.emit('getLobbies', {});
+    //   socket.emit('getMapList', {});
+    //   //socket.emit('registerClient', {userID: userName});
+    // }, 1000);
   }, []);
 
 
@@ -84,13 +149,37 @@ function App() {
 
 
   useEffect(() => {
-    console.log(lobby);
+    lobbyRef.current = lobby;
+
+    if (lobby !== undefined) {
+      let map = mapOptions.filter((map) => map.label === lobby.mapLabel);
+
+      console.log(map);
+      if (map.length === 1) {
+        setLobbyMapSelection(map[0]);        
+      }
+
+    }
   }, [lobby]);
+
+
+  useEffect(() => {
+    tempUserNameRef.current = tempUserName;
+  }, [tempUserName]);
+
+
+  const handleUsernameSave = () => {
+    // Query for existing usernames
+    console.log('Registering username: ' + tempUserName);
+    socket.emit('registerUsername', {username: tempUserName});
+    // setUserName(tempUserName);
+    // handleUserModalClose();
+  }
 
 
   return (
     <div className="App">
-      <Router>
+{/*      <Router>*/}
         <Navbar collapseOnSelect expand='sm' bg='dark' variant='dark' sticky='top'>
           <Container className="me-auto">
             <Navbar.Toggle aria-controls="responsive-navbar-nav" />
@@ -142,13 +231,34 @@ function App() {
               lobbyId={lobbyId}
               setLobbyId={setLobbyId}
               setOpenLobbyPanel={setOpenLobbyPanel}
+              setShowUserModal={setShowUserModal}
               socket={socket}
             />
           }/>
         </Routes>
-      </Router>
+        <Routes>
+          <Route path='/gamesession/:id' element={
+            <GameSession
+              userName={userName}
+              searchInput={lobbySearchInput}
+              lobbies={lobbies}
+              lobby={lobby}
+              setLobby={setLobby}
+              setSearchInput={setLobbySearchInput}
+              lobbyId={lobbyId}
+              setLobbyId={setLobbyId}
+              setOpenLobbyPanel={setOpenLobbyPanel}
+              socket={socket}
+              mapSelection={lobbyMapSelection}
+              gameCodeId={gameCodeId}
+              playerName={tempUserName}
+              role={role}
+            />
+          }/>
+        </Routes>
+{/*      </Router>*/}
 
-      <Modal show={showUserModal} onHide={handleUserModalClose}>
+      <Modal show={showUserModal} onHide={handleUserModalClose} onKeyDown={(e) => {if(e.key === 'Enter') {handleUsernameSave();}}}>
         <Modal.Header>
           <Modal.Title >User Info</Modal.Title>
         </Modal.Header>
@@ -168,16 +278,25 @@ function App() {
               </InputGroup>
             </Col>
           </Row>
+          {
+            newUsernameUnavailable ?
+              <Row className='align-items-center'>
+                <Col className='align-items-center d-flex'>
+                  <span style={{color: 'red'}}> UNAVAILABLE </span>
+                </Col>
+              </Row> :
+              <div />
+            }
           </Container>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={(e) => {setTempUserName(userName); handleUserModalClose();}}>
             Close
           </Button>
-          <Button variant="primary" onClick={(e) => {setUserName(tempUserName); handleUserModalClose();}}>
+          <Button variant="primary" onClick={(e) => {handleUsernameSave();}}>
             Save Changes
-          </Button>
-        </Modal.Footer>
+          </Button
+>        </Modal.Footer>
       </Modal>
 
         <SlidingPanel
@@ -187,7 +306,7 @@ function App() {
           noBackdrop={false}
           size={ 85 }
         >
-          <div style={{overflow: 'scroll', backgroundColor: `var(--color-seconday)`, height: '100%', paddingBottom: '5em', opacity: '100%'}}>
+          <div style={{overflow: 'scroll', backgroundColor: '#B5BEC6', height: '100%', paddingBottom: '5em', opacity: '100%'}}>
             <Lobby
               setOpenLobbyPanel={setOpenLobbyPanel}
               lobbyId={lobbyId}
@@ -200,6 +319,10 @@ function App() {
               setNewMap={setNewMap}
               lobbyMapSelection={lobbyMapSelection}
               setLobbyMapSelection={setLobbyMapSelection}
+              gameCodeId={gameCodeId}
+              setGameCodeId={setGameCodeId}
+              userName={userName}
+              //navigate={navigate}
               socket={socket}
             /> 
           </div>

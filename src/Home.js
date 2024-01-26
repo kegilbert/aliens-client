@@ -18,7 +18,7 @@ const Home = (props) => {
   const primarySelectStyles = {
     control: base => ({
       ...base,
-      borderColor: 'transparent !important',
+      borderColor: 'transparent !important', 
       boxShadow: 'none',
     })
   };
@@ -27,7 +27,7 @@ const Home = (props) => {
     <Container fluid>
       <Row xs='12' style={{display: 'flex', justifyContent: 'center'}}>
         <Col xs='12' style={{display: 'flex', justifyContent: 'center'}}>
-          <img src={home_bg} alt="home-bg" style={{height: `${window.innerHeight * 0.95}px`, width: null}}/>; {/* width: `${window.innerWidth}px` */}
+          <img src={home_bg} alt="home-bg" style={{height: `${window.innerHeight * 0.90}px`, width: null}}/>; {/* width: `${window.innerWidth}px` */}
         </Col>
       </Row>
     </Container>

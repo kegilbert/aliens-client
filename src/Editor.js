@@ -125,6 +125,9 @@ function Editor(props) {
 
   const generateMap = () => {
     let hexagons = []
+    if (props.mapSelection === null) {
+      return hexagons;
+    }
 
     for (let row = 1; row < 15; row++) {
       for (let col = 0; col < 23; col++) {

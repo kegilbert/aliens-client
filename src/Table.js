@@ -36,6 +36,7 @@ const DatatablePage = (props) => {
           <hr style={{marginTop: '0.6em'}}/>
           <BootstrapTable
             { ...innerprops.baseProps }
+            // rowStyle={{ fontSize: 'small', border: '1px solid black' }}
             rowStyle={{ fontSize: 'small' }}
             editCellStyle={{ fontSize: 'small' }}
             editorStyle={{ fontSize: 'small' }}

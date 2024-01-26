@@ -15,6 +15,7 @@ import Select from 'react-select';
 import {
   IoLockClosed
 } from 'react-icons/io5'; // MIT Licensed icons
+import { v4 as uuidv4 } from 'uuid';
 
 import DatatablePage from './Table';
 
@@ -63,6 +64,12 @@ function Lobbies(props) {
     hideSelectColumn: true,
     bgColor: `var(--uap-color-primary)`,
     onSelect: (row, isSelect, rowIndex, e) => {
+      if (props.userName === '') {
+        props.setShowUserModal(true);
+
+        return;
+      }
+
       if (props.lobbyId !== '') {
         if (props.lobbyId === row.lobbyId) {
           return;
@@ -98,6 +105,8 @@ function Lobbies(props) {
               props.setLobbyId(row.lobbyId);
               props.setLobby(row);
               props.setOpenLobbyPanel(true);
+
+              props.socket.emit('joinLobby', {roomCode: row.lobbyId, lobbyName: row.lobbyName, userID: props.userName});
             } else {
               alert('Incorrect password');
             }
@@ -109,6 +118,8 @@ function Lobbies(props) {
       props.setLobbyId(row.lobbyId);
       props.setLobby(row);
       props.setOpenLobbyPanel(true);
+
+      props.socket.emit('joinLobby', {roomCode: row.lobbyId, lobbyName: row.lobbyName, userID: props.userName});
     }
   };
 
@@ -126,6 +137,12 @@ function Lobbies(props) {
           <Button
             className='primaryButton'
             onClick={() => {
+              if (props.userName === '') {
+                props.setShowUserModal(true);
+
+                return;
+              }
+
               const lobbyName = prompt('Lobby Name');
 
               if (lobbyName === null) {
@@ -133,10 +150,10 @@ function Lobbies(props) {
               }
 
               const lobbyPW   = prompt('Password [leave blank for public lobby]');
-              var newID = Math.random().toString(36).substr(2, 6).toUpperCase();
+              var newID = uuidv4().slice(-6).toUpperCase(); //Math.random().toString(36).substr(2, 6).toUpperCase();
 
               while(props.lobbies.map((lobby) => lobby.lobbyId).includes(newID)) {
-                newID = Math.random().toString(36).substr(2, 6).toUpperCase();
+                newID = uuidv4().slice(-6).toUpperCase(); //Math.random().toString(36).substr(2, 6).toUpperCase();
               }
 
               props.setLobbyId(newID);
