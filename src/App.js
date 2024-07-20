@@ -55,7 +55,8 @@ function App() {
   const [mapEditorSelection, setMapEditorSelection] = useState(mapOptions[0]);
   const [lobbyMapSelection, setLobbyMapSelection] = useState(null);
   const [gameCodeId, setGameCodeId] = useState('');
-  const [role, setRole] = useState('');
+  //const [role, setRole] = useState('');
+  const [playerState, setPlayerState] = useState();
   const [newUsernameUnavailable, setNewUsernameUnavailable] = useState(false);
 
 
@@ -70,12 +71,20 @@ function App() {
     setShowUserModal(false);
   }
 
+  const handleUnload = (e) => {
+    e.preventDefault();
+  }
+
   /**
    *  Pagge load useEffect
    */
   useEffect(() => {
-    setTempUserName(window.localStorage.getItem('username'));
-    setUserName(window.localStorage.getItem('username'));
+    var cached_username = window.localStorage.getItem('username');
+    if (cached_username !== 'null') {
+      socket.emit('registerUsername', {username: cached_username});
+      setTempUserName(cached_username);
+    }
+    //setUserName(window.localStorage.getItem('username'));
 
     socket.on('emitMapList', (data) => {
       let _mapOptions = [...mapOptions];
@@ -106,12 +115,14 @@ function App() {
     // });
 
     socket.on('roleAssignment', (data) => {
-      setRole(data.role);
+      setPlayerState(data.player);
     });
 
+    socket.on('joinCreatorToLobby', (data) => {
+      setLobby(lobbies.filter((lobby) => lobby.lobbyId === lobbyId)[0]);
+    })
+
     socket.on('usernameRegistered', (data) => {
-      console.log('REGISTER SUCCESSFUL');
-      console.log(tempUserNameRef.current);
       setUserName(tempUserNameRef.current);
       window.localStorage.setItem('username', tempUserNameRef.current);
       handleUserModalClose();
@@ -130,14 +141,9 @@ function App() {
       socket.emit('getLobbies', {});
       socket.emit('getMapList', {});
     });
-    /**
-     *  Set delay to ensure socket handshake has time to complete before sending data 
-     */
-    // setTimeout(function() {
-    //   socket.emit('getLobbies', {});
-    //   socket.emit('getMapList', {});
-    //   //socket.emit('registerClient', {userID: userName});
-    // }, 1000);
+
+    // Apparently can't send socket events in this event handler
+    //window.addEventListener("beforeunload", handleUnload);
   }, []);
 
 
@@ -154,17 +160,18 @@ function App() {
     if (lobby !== undefined) {
       let map = mapOptions.filter((map) => map.label === lobby.mapLabel);
 
-      console.log(map);
       if (map.length === 1) {
         setLobbyMapSelection(map[0]);        
       }
-
     }
   }, [lobby]);
 
 
   useEffect(() => {
     tempUserNameRef.current = tempUserName;
+
+    // window.addEventListener("beforeunload", handleUnload);
+    // return () => window.removeEventListener("beforeunload", handleUnload);
   }, [tempUserName]);
 
 
@@ -252,7 +259,7 @@ function App() {
               mapSelection={lobbyMapSelection}
               gameCodeId={gameCodeId}
               playerName={tempUserName}
-              role={role}
+              playerState={playerState}
             />
           }/>
         </Routes>

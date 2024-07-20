@@ -26,6 +26,8 @@ import './App.css';
 var host = window.location.hostname;
 
 function Lobby(props) {
+  const [refresh, setRefresh] = useState(false);
+
   const navigate = useNavigate();
 
   const playerListColumns = [{
@@ -36,7 +38,6 @@ function Lobby(props) {
         verticalAlign: 'middle',
         fontSize: '1.25em'
       },
-
     }, {
       dataField: 'playerReady',
       text: 'Ready',
@@ -45,13 +46,21 @@ function Lobby(props) {
       headerStyle: (colum, colIndex) => {
        return {width: '5em', textAlign: 'center'}
       },
+      formatExtraData: props.lobby,
       formatter: (cell, row, rowIndex, formatExtraData) => {
-        if (row.playerReady) {
+        console.log('=================');
+        console.log(row);
+        console.log(props.lobby.players);
+        console.log(formatExtraData);
+        console.log('=================');
+        //if (row.playerReady) {
+        console.log(`[ FORMATTER ] ${formatExtraData.players[rowIndex].playerReady}`);
+        if (formatExtraData.players[rowIndex].playerReady) {
           return (
             <IoCheckmarkCircleOutline size={24} color={'green'}/>
           );
         } else {
-          return (<div />);
+          return null;
         }
       }
     }
@@ -62,14 +71,20 @@ function Lobby(props) {
     clickToSelect: true,
     clickToEdit: false,
     hideSelectColumn: true,
-    bgColor: `var(--uap-color-primary)`,
+    // bgColor: 'green',
     onSelect: (row, isSelect, rowIndex, e) => {
+      console.log(row);
+      console.log(rowIndex);
       var _lobby = {...props.lobby};
 
       if (_lobby.players[rowIndex].playerName === props.userName) {
+        setRefresh(true);
+
         _lobby.players[rowIndex].playerReady = !_lobby.players[rowIndex].playerReady;
         //props.setLobby(_lobby);
 
+        console.log(_lobby.players[0]);
+        console.log(_lobby.players[rowIndex].playerReady);
         props.socket.emit('registerPlayerReadyState', {playerName: props.userName, playerReady: _lobby.players[rowIndex].playerReady, lobbyId: _lobby.lobbyId});
       }
     }
@@ -82,6 +97,13 @@ function Lobby(props) {
       boxShadow: 'none',
     })
   };
+
+
+  useEffect(() => {
+    if (refresh) {
+      setRefresh(false);
+    }
+  }, [refresh]);
 
   
   // useEffect(() => {
@@ -140,32 +162,39 @@ function Lobby(props) {
           </Col>
         }
         <Col xs='4' className='d-flex justify-content-center' style={{marginLeft: '-10em'}}>
-          <Editor 
+          { props.lobby.mapLabel !== '' ?
+          <Editor
               userName={props.userName}
               newMap={props.newMap}
               setNewMap={props.setNewMap}
               mapOptions={props.mapOptions}
               setMapOptions={props.setMapOptions}
               viewMode={'viewOnly'}
-              mapSelection={props.lobbyMapSelection}
+              //mapSelection={props.lobbyMapSelection}
+              mapSelection={props.mapOptions.filter((map) => map.label === props.lobby.mapLabel)[0]}
               setMapSelection={props.setLobbyMapSelection}
               socket={props.socket}
-          />
+          /> :
+          <div />
+        }
         </Col>
       </Row>
 
       <Row>
         <Col xs='6'>
+        { refresh ?
+          <div /> :
           <DatatablePage
             keyField='playerName'
             columns={playerListColumns}
             data={props.lobby.players}
             selectRow={playerSelectRow}
           />
+        }
         </Col>
       </Row>
 
-      <Row className='justify-content-center'>
+      <Row className='d-flex justify-content-center' style={{position: 'fixed', bottom: '5em', left: '65vw', width: '35vw'}}>
         <Col className=' d-flex justify-content-center'>
           <Button
             className='warningButton'
@@ -183,7 +212,7 @@ function Lobby(props) {
 
       {
         props.lobby.players.every((player) => player.playerReady === true) && props.lobby.mapLabel !== '' ?
-          <Row className='justify-content-center'>
+          <Row className='d-flex justify-content-center' style={{position: 'fixed', bottom: '2em', left: '62.5vw', width: '40vw'}}>
             <Col xs='8' className='d-flex justify-content-center'>
               <Button
                 className='primaryButton'
