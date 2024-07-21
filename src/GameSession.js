@@ -30,6 +30,7 @@ import {
 } from 'react-icons/io5'; // MIT Licensed icons
 import DatatablePage from './Table';
 
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 import Home from './Home';
@@ -48,7 +49,8 @@ function GameSession(props) {
   ]);
 
   const [toggleDrawingBtnColor, setToggleDrawingBtnColor] = useState('grey');
-  const [currSpace, setCurrSpace] = useState( );
+  const [currSpace, setCurrSpace] = useState();
+  const [prevSpace, setPrevSpace] = useState();
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [spaceSelector, setSpaceSelector] = useState(spaceOptions[0]);
 
@@ -73,6 +75,7 @@ function GameSession(props) {
   useEffect(() => {
     if (props.playerState !== undefined) {
       setCurrSpace(props.playerState.pos);
+      setPrevSpace(props.playerState.pos);
     }
   }, props.playerState);
 
@@ -207,48 +210,6 @@ function GameSession(props) {
       return neighbors;
   }
 
-  // Example usage:
-  // let startX = 0, startY = 0;
-  // let endX = 3, endY = 2;
-
-  // let grid = [
-  //     [1, 1, 1, 1],
-  //     [1, 1, 0, 1],
-  //     [1, 0, 0, 1],
-  //     [1, 1, 1, 1]
-  // ];
-
-  // let path = findShortestPath(startX, startY, endX, endY, grid);
-
-  // if (path === null) {
-  //     console.log(`No path found between (${startX}, ${startY}) and (${endX}, ${endY}).`);
-  // } else {
-  //     console.log(`Shortest path between (${startX}, ${startY}) and (${endX}, ${endY}):`);
-  //     console.log(path);
-  // }
-
-  // /**************************************************/
-
-
-
-
-  // const hexDistance = (x1, y1, x2, y2) => {
-  //   // Adjust y coordinates for odd columns
-  //   if (x1 % 2 !== 0 && x2 % 2 !== 0) {
-  //       y1 -= 1;
-  //       y2 -= 1;
-  //   } else if (x1 % 2 === 0 && x2 % 2 === 0) {
-  //       y1 += 1;
-  //       y2 += 1;
-  //   }
-
-  //   let dx = Math.abs(x2 - x1);
-  //   let dy = Math.abs(y2 - y1);
-  //   let dx_dy = Math.abs(dx - dy);
-
-  //   return Math.max(dx, dy, dx_dy);
-  // }
-
 
   const hexClickHandle = (e, id) => {
     const new_x = id.match(/\D/g)[0].charCodeAt(0);
@@ -256,21 +217,21 @@ function GameSession(props) {
     const new_y = parseInt(id.match(/\d+/g)[0]);
     const old_y = parseInt(currSpace.match(/\d+/g)[0]);
 
-    let path = findShortestPath(currSpace, id, props.mapSelection.value.tiles);
-    console.log(path);
+    let path = findShortestPath(prevSpace, id, props.mapSelection.value.tiles);
 
     let dx = new_x - old_x;
     let dy = new_y - old_y;
 
-    const movement_limit = 3;
+    const movement_limit = props.playerState.maxMovement;
 
     if ((path.length - 1) <= movement_limit) {
       setCurrSpace(id);
-      props.socket.emit('tileClick', {
-        tile: id,
-        lobbyId: props.lobby.lobbyId,
-        playerId: props.userName
-      });
+      // props.socket.emit('tileClick', {
+      //   tile: id,
+      //   tileType: props.mapSelection.value.tiles[id].tileType,
+      //   lobbyId: props.lobby.lobbyId,
+      //   playerId: props.userName
+      // });
     }
   }
 
@@ -306,14 +267,23 @@ function GameSession(props) {
               fillRadialGradientStartRadius={12}
               fillRadialGradientEndPoint= {{ x: 0, y: 0 }}
               fillRadialGradientEndRadius={50}
-              fillRadialGradientColorStops= {[0, props.mapSelection.value.tiles[id].color, 0.5, id == currSpace ? '#51ff0d' : props.mapSelection.value.tiles[id].color]}
+              fillRadialGradientColorStops= {[
+                0,
+                props.mapSelection.value.tiles[id].color,
+                0.5,
+                (id == currSpace) ?
+                  '#51ff0d' :
+                  (id == prevSpace && currSpace !== prevSpace) ?
+                    'blue' :
+                    props.mapSelection.value.tiles[id].color
+              ]}
 
               stroke={'black'}
               //stroke={(currSpace_int === id_int + 1 || currSpace_int === id_int - 1) ? 'green' : 'black'}
               strokeWidth={1}
               //onClick={(e) => {setCurrSpace(id); props.socket.emit('tileClick', {tile: id, lobbyId: props.lobby.lobbyId, playerId: props.userName}); }}
-              onClick={(e => { hexClickHandle(e, id); })}
-              onTap={(e) => {setCurrSpace(id); props.socket.emit('tileClick', {tile: id, lobbyId: props.lobby.lobbyId, playerId: props.userName}); }}
+              onClick={(e) => { hexClickHandle(e, id); }}
+              onTap={(e) => {hexClickHandle(e, id); }}
               name={id}
               fillAfterStrokeEnabled={true}
               opacity={0.50}
@@ -403,6 +373,7 @@ function GameSession(props) {
     return (<div />);
   } else {
     return (
+      <>
         <Container fluid>
         <Row className='align-items-center d-flex' style={{height: '75vh'}}>
           <Col sm='10' md='10' className='align-items-center justify-content-center d-flex' style={{height: '75vh'}}>
@@ -443,7 +414,7 @@ function GameSession(props) {
                   x={36 + (getRow(currSpace) * (36 + 18))}
                   y={36 + (getCol(currSpace) * (36 + 27)) + (getRow(currSpace) % 2)*31}
                   // (3+(1))*(1-((1)/10)) funky math to scale down radius to match as kills increase. No kills starts at -1
-                  radius={72*(props.playerState.role === 'alien' ? (3+(0))*(1-((0)/10)) : 1.30)}
+                  radius={72*(props.playerState.role === 'alien' ? (2+(props.playerState.kills))*(1-((props.playerState.kills)/10)) : 1.30)}
                   strokeWidth={3}
                   stroke={props.playerState.role === 'alien' ? 'red' : 'green'}
                   fill={'rgba(66, 245, 245, 0.0)'}
@@ -496,7 +467,15 @@ function GameSession(props) {
               <Col xs='12'>
                 <Button
                   className='primaryButton'
-                  onClick={(e) => {props.socket.emit('turnSubmit', {player: props.playerStateName, roomCode: props.gameCodeId})}}
+                  onClick={(e) => {
+                    setPrevSpace(currSpace);
+                    props.socket.emit('turnSubmit', {
+                      tile: currSpace,
+                      tileType: props.mapSelection.value.tiles[currSpace].tileType,
+                      lobbyId: props.lobby.lobbyId,
+                      playerId: props.userName
+                    });
+                  }}
                   style={{width: '100%', marginTop: '0em', marginLeft: '0em'}}
                 >
                   End Turn
@@ -506,13 +485,21 @@ function GameSession(props) {
           </Col>
         </Row>
         <Row className='align-items-center d-flex'>
-          <Col xs='12' style={{opacity: '0.8', position: 'fixed', bottom: '1em', backgroundColor: props.playerState.role === 'alien' ? 'red' : 'green'}}>
+          <Col xs='12' style={{opacity: '0.8', position: 'fixed', bottom: '2.5em', backgroundColor: props.playerState.role === 'alien' ? 'red' : 'green'}}>
             <h2 style={{align: 'center', flex: 'display'}}>
              ROLE: {props.playerState.role.toUpperCase()}
             </h2>
           </Col>
         </Row>
+        <Row className='align-items-center d-flex'>
+          <Col xs='12' style={{position: 'fixed', bottom: '0em'}}>
+            <h4 style={{align: 'center', flex: 'display'}}>
+             Max Movement: {props.playerState.maxMovement}
+            </h4>
+          </Col>
+        </Row>
       </Container>
+      </>
     );
   }
 }

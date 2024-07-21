@@ -14,7 +14,7 @@ import {
   FormControl,
 } from 'react-bootstrap';
 import Select from 'react-select';
-
+import { ToastContainer, Slide, cssTransition, toast } from 'react-toastify';
 import io from 'socket.io-client';
 import {
   IoPersonCircleOutline,
@@ -57,6 +57,7 @@ function App() {
   const [gameCodeId, setGameCodeId] = useState('');
   //const [role, setRole] = useState('');
   const [playerState, setPlayerState] = useState();
+  const [playerEventFlag, setPlayerEventFlag] = useState(false);
   const [newUsernameUnavailable, setNewUsernameUnavailable] = useState(false);
 
 
@@ -95,6 +96,7 @@ function App() {
     });
 
     socket.on('playerEvent', (data) => {
+      setPlayerEventFlag(true);
       console.log(data);
     });
 
@@ -152,6 +154,23 @@ function App() {
       setLobby(lobbies.filter((lobby) => lobby.lobbyId === lobbyId)[0]);
     }
   }, [lobbies]);
+
+
+  useEffect(() => {
+    if (playerEventFlag) {
+      toast.success(
+        <div>
+          Enter tile to generate noise:  <input />
+        </div>,
+        {
+          closeOnClick: false,
+          autoClose: false
+        }
+      );
+
+      setPlayerEventFlag(false);
+    }
+  }, [playerEventFlag]);
 
 
   useEffect(() => {
@@ -334,7 +353,15 @@ function App() {
             /> 
           </div>
         </SlidingPanel>
-
+      <ToastContainer
+        newestOnTop={true}
+        transition={Slide}
+        // transition={cssTransition({
+        //   enter: 'slideIn',
+        //   exit: 'slideOut',
+        // })}
+        draggablePercent={35}
+      />
     </div>
   );
 }
