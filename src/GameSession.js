@@ -105,7 +105,7 @@ function GameSession(props) {
       }
   }
 
-  function hexDistance(x1, y1, x2, y2) {
+  const hexDistance = (x1, y1, x2, y2) => {
       // Adjust y coordinates for odd columns
       if (x1 % 2 !== 0 && x2 % 2 !== 0) {
           y1 -= 1;
@@ -122,7 +122,7 @@ function GameSession(props) {
       return Math.max(dx, dy, dx_dy);
   }
 
-  function findShortestPath(startTile, endTile, grid) {
+  const findShortestPath = (startTile, endTile, grid) => {
       // A* algorithm implementation
       let openSet = new PriorityQueue();
       let cameFrom = new Map();
@@ -180,7 +180,7 @@ function GameSession(props) {
       return null;
   }
 
-  function getHexNeighbors(x, y, grid) {
+  const getHexNeighbors = (x, y, grid) => {
       let neighbors = [];
       let directions = [];
 
