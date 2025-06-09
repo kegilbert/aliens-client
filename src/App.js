@@ -205,7 +205,8 @@ function App() {
 
   return (
     <div className="App">
-{/*      <Router>*/}
+    {
+      playerState === undefined ?
         <Navbar collapseOnSelect expand='sm' bg='dark' variant='dark' sticky='top'>
           <Container className="me-auto">
             <Navbar.Toggle aria-controls="responsive-navbar-nav" />
@@ -227,7 +228,9 @@ function App() {
             </Navbar.Brand>
           </Navbar.Collapse>
           </Container>
-        </Navbar>
+        </Navbar> :
+        <div />
+      }
         <Routes>
           <Route path='/' exact element={<Home />} />
         </Routes>

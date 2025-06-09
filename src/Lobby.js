@@ -48,13 +48,6 @@ function Lobby(props) {
       },
       formatExtraData: props.lobby,
       formatter: (cell, row, rowIndex, formatExtraData) => {
-        console.log('=================');
-        console.log(row);
-        console.log(props.lobby.players);
-        console.log(formatExtraData);
-        console.log('=================');
-        //if (row.playerReady) {
-        console.log(`[ FORMATTER ] ${formatExtraData.players[rowIndex].playerReady}`);
         if (formatExtraData.players[rowIndex].playerReady) {
           return (
             <IoCheckmarkCircleOutline size={24} color={'green'}/>
@@ -79,12 +72,7 @@ function Lobby(props) {
 
       if (_lobby.players[rowIndex].playerName === props.userName) {
         setRefresh(true);
-
         _lobby.players[rowIndex].playerReady = !_lobby.players[rowIndex].playerReady;
-        //props.setLobby(_lobby);
-
-        console.log(_lobby.players[0]);
-        console.log(_lobby.players[rowIndex].playerReady);
         props.socket.emit('registerPlayerReadyState', {playerName: props.userName, playerReady: _lobby.players[rowIndex].playerReady, lobbyId: _lobby.lobbyId});
       }
     }
@@ -104,14 +92,6 @@ function Lobby(props) {
       setRefresh(false);
     }
   }, [refresh]);
-
-  
-  // useEffect(() => {
-  //   props.socket.on("gameStartResp", (data) => {
-  //     props.setOpenLobbyPanel(false);
-  //     navigate(`/gamesession/${props.lobby.lobbyId}`, {replace: true});
-  //   });
-  // }, []);
 
 
   if (props.lobby === undefined) { return (<div/>) } else {
@@ -194,7 +174,7 @@ function Lobby(props) {
         </Col>
       </Row>
 
-      <Row className='d-flex justify-content-center' style={{position: 'fixed', bottom: '5em', left: '65vw', width: '35vw'}}>
+      <Row className='d-flex justify-content-center' style={{position: 'fixed', bottom: '5em', width: '50vw'}}>
         <Col className=' d-flex justify-content-center'>
           <Button
             className='warningButton'
@@ -212,7 +192,7 @@ function Lobby(props) {
 
       {
         props.lobby.players.every((player) => player.playerReady === true) && props.lobby.mapLabel !== '' ?
-          <Row className='d-flex justify-content-center' style={{position: 'fixed', bottom: '2em', left: '62.5vw', width: '40vw'}}>
+          <Row className='d-flex justify-content-center' style={{position: 'fixed', bottom: '2em', width: '50vw'}}>
             <Col xs='8' className='d-flex justify-content-center'>
               <Button
                 className='primaryButton'

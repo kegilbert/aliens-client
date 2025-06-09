@@ -134,7 +134,6 @@ function GameSession(props) {
       const endY = parseInt(endTile.match(/\d+/g)[0]);
       const startY = parseInt(startTile.match(/\d+/g)[0]);
 
-      // Initialize scores
       gScore.set(`${startX},${startY}`, 0);
       fScore.set(`${startX},${startY}`, hexDistance(startX, startY, endX, endY));
 
@@ -155,13 +154,12 @@ function GameSession(props) {
               return path.map((tile) => {return XY2Tile(tile[0], tile[1])});
           }
 
-          // Get neighbors
           let neighbors = getHexNeighbors(currentX, currentY, grid);
 
           for (let neighbor of neighbors) {
               let [neighborX, neighborY] = neighbor;
 
-              let tentative_gScore = gScore.get(`${currentX},${currentY}`) + 1; // Assuming uniform cost
+              let tentative_gScore = gScore.get(`${currentX},${currentY}`) + 1;
 
               if (!gScore.has(`${neighborX},${neighborY}`) || tentative_gScore < gScore.get(`${neighborX},${neighborY}`)) {
                   // Found a better path to the neighbor
@@ -176,7 +174,7 @@ function GameSession(props) {
           }
       }
 
-      // If we reach here, no path was found
+      // No path found
       return null;
   }
 
@@ -237,6 +235,7 @@ function GameSession(props) {
 
 
   const generateMap = () => {
+    if (prevSpace === undefined) { return []; } 
     let hexagons = []
 
     for (let row = 1; row < 15; row++) {
@@ -275,24 +274,18 @@ function GameSession(props) {
                   '#51ff0d' :
                   (id == prevSpace && currSpace !== prevSpace) ?
                     'blue' :
+                    (findShortestPath(prevSpace, id, props.mapSelection.value.tiles).length - 1) <= props.playerState.maxMovement ? 'yellow' :
                     props.mapSelection.value.tiles[id].color
               ]}
 
               stroke={'black'}
-              //stroke={(currSpace_int === id_int + 1 || currSpace_int === id_int - 1) ? 'green' : 'black'}
               strokeWidth={1}
-              //onClick={(e) => {setCurrSpace(id); props.socket.emit('tileClick', {tile: id, lobbyId: props.lobby.lobbyId, playerId: props.userName}); }}
               onClick={(e) => { hexClickHandle(e, id); }}
               onTap={(e) => {hexClickHandle(e, id); }}
               name={id}
               fillAfterStrokeEnabled={true}
               opacity={0.50}
               rotation={90}
-              //filters={[Konva.Filters.HSL]}
-              // shadowColor={'#8442f5'}
-              // shadowBlur={id == currSpace ? 40 : 0}
-              // //shadowOffset={{ x: 0, y: 0 }}
-              // shadowOpacity={id == currSpace ? 0.5 : 1}
             />
             </>
           );
@@ -408,7 +401,7 @@ function GameSession(props) {
               }
               </Layer>
               <Layer listening={false}>
-              { currSpace !== undefined ?
+{/*              { currSpace !== undefined ?
 
                 <Circle
                   x={36 + (getRow(currSpace) * (36 + 18))}
@@ -432,7 +425,7 @@ function GameSession(props) {
                 // />
                 :
                 <div />
-              }
+              }*/}
               </Layer>
               <Layer ref={layerRef}>
                 {lines.map((line, i) => (
