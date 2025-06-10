@@ -57,7 +57,7 @@ function App() {
   const [gameCodeId, setGameCodeId] = useState('');
   //const [role, setRole] = useState('');
   const [playerState, setPlayerState] = useState();
-  const [playerEventFlag, setPlayerEventFlag] = useState('');
+  const [playerEventFlag, setPlayerEventFlag] = useState(undefined);
   const [newUsernameUnavailable, setNewUsernameUnavailable] = useState(false);
 
 
@@ -96,10 +96,11 @@ function App() {
     });
 
     socket.on('playerEvent', (data) => {
-      setPlayerEventFlag(data.state);
+      setPlayerEventFlag(data);
     });
 
     socket.on('roomEvent', (data) => {
+      //setPlayerEventFlag(data);
       console.log(data);
     });
 
@@ -156,8 +157,11 @@ function App() {
 
 
   useEffect(() => {
-    if (playerEventFlag !== '') {
-      if (playerEventFlag === 'silence') {
+    if (playerEventFlag !== undefined) {
+      var card = playerEventFlag.card;
+      var tile = playerEventFlag.tile;
+      var noiseTileSource = '';
+      if (card === 'silence') {
         toast.success(
           <div>
             Silence in all sectors
@@ -167,7 +171,7 @@ function App() {
             autoClose: false
           }
         );  
-      } else if (playerEventFlag.includes('silence -')) {
+      } else if (card.includes('silence -')) {
         toast.success(
           <div>
             Silence in all sectors + Item!
@@ -178,10 +182,11 @@ function App() {
             autoClose: false
           }
         ); 
-      } else if (playerEventFlag === 'any') {
+      } else if (card === 'any') {
         toast.success(
           <div>
-            Enter tile to generate noise:  <input />
+            Enter tile to generate noise at: 
+            {/*Enter tile to generate noise:  <input value={noiseTileSource} onChange={(e) => { noiseTileSource += e.target.value }}/>*/}
           </div>,
           {
             closeOnClick: false,
@@ -191,7 +196,7 @@ function App() {
       } else {
         toast.error(
           <div>
-            You hear a noise in sector
+            You hear a noise your sector
           </div>,
           {
             closeOnClick: false,
@@ -200,7 +205,18 @@ function App() {
         );        
       }
 
-      setPlayerEventFlag('');
+      if (noiseTileSource === '') {
+        noiseTileSource = tile;
+      }
+
+      socket.emit('noiseInSector', {
+        state: card.includes('silence') ? 'silence' : 'noise',
+        tile: noiseTileSource,
+        playerId: playerEventFlag.playerId,
+        numHeldCards: playerEventFlag.playerNumHeldCards,
+        lobbyId: lobby.lobbyId
+      });
+      setPlayerEventFlag(undefined);
     }
   }, [playerEventFlag]);
 
