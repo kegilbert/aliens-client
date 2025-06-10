@@ -57,7 +57,7 @@ function App() {
   const [gameCodeId, setGameCodeId] = useState('');
   //const [role, setRole] = useState('');
   const [playerState, setPlayerState] = useState();
-  const [playerEventFlag, setPlayerEventFlag] = useState(false);
+  const [playerEventFlag, setPlayerEventFlag] = useState('');
   const [newUsernameUnavailable, setNewUsernameUnavailable] = useState(false);
 
 
@@ -96,8 +96,7 @@ function App() {
     });
 
     socket.on('playerEvent', (data) => {
-      setPlayerEventFlag(true);
-      console.log(data);
+      setPlayerEventFlag(data.state);
     });
 
     socket.on('roomEvent', (data) => {
@@ -157,18 +156,51 @@ function App() {
 
 
   useEffect(() => {
-    if (playerEventFlag) {
-      toast.success(
-        <div>
-          Enter tile to generate noise:  <input />
-        </div>,
-        {
-          closeOnClick: false,
-          autoClose: false
-        }
-      );
+    if (playerEventFlag !== '') {
+      if (playerEventFlag === 'silence') {
+        toast.success(
+          <div>
+            Silence in all sectors
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: false
+          }
+        );  
+      } else if (playerEventFlag.includes('silence -')) {
+        toast.success(
+          <div>
+            Silence in all sectors + Item!
+            {playerEventFlag}
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: false
+          }
+        ); 
+      } else if (playerEventFlag === 'any') {
+        toast.success(
+          <div>
+            Enter tile to generate noise:  <input />
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: false
+          }
+        );
+      } else {
+        toast.error(
+          <div>
+            You hear a noise in sector
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: false
+          }
+        );        
+      }
 
-      setPlayerEventFlag(false);
+      setPlayerEventFlag('');
     }
   }, [playerEventFlag]);
 

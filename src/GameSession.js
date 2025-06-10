@@ -21,6 +21,7 @@ import {
   Line,
   Rect,
   Circle,
+  Arrow,
   RegularPolygon,
 } from 'react-konva';
 
@@ -65,7 +66,6 @@ function GameSession(props) {
 
   // client-side
   useEffect(() => {
-    console.log(defaultMapNames);
     props.socket.on("connect", () => {  console.log(props.socket.id); });
     props.socket.on("responseMessage", (data) => {  console.log(data); });
     props.socket.on("connect_error", (err) => {  console.log(`connect_error due to ${err.message}`);});
@@ -351,11 +351,16 @@ function GameSession(props) {
   };
 
   const getRow = (id) => {
-    return (id.match('[A-Z]')[0].charCodeAt(0) - 'A'.charCodeAt(0));
+    var col = (id.match('[A-Z]')[0].charCodeAt(0) - 'A'.charCodeAt(0));
+    return 36 + (col*(36+18));
   };
 
-  const getCol = (id) => {
-    var ret = parseInt(id.match('[0-9]+')[0])
+  const getCol = (id) => {    
+    var row = parseInt(id.match('[0-9]+')[0]);
+    var col = (id.match('[A-Z]')[0].charCodeAt(0) - 'A'.charCodeAt(0));
+    console.log(col);
+    var col_adjust_const = (col % 2 === 0) ? 0 : 36;
+    var ret = 36 + (row * (36+27)) + col_adjust_const;
 
     return ret;
   };
@@ -401,31 +406,18 @@ function GameSession(props) {
               }
               </Layer>
               <Layer listening={false}>
-{/*              { currSpace !== undefined ?
-
-                <Circle
-                  x={36 + (getRow(currSpace) * (36 + 18))}
-                  y={36 + (getCol(currSpace) * (36 + 27)) + (getRow(currSpace) % 2)*31}
-                  // (3+(1))*(1-((1)/10)) funky math to scale down radius to match as kills increase. No kills starts at -1
-                  radius={72*(props.playerState.role === 'alien' ? (2+(props.playerState.kills))*(1-((props.playerState.kills)/10)) : 1.30)}
-                  strokeWidth={3}
-                  stroke={props.playerState.role === 'alien' ? 'red' : 'green'}
-                  fill={'rgba(66, 245, 245, 0.0)'}
-                  //fill={'green'}
-                />
-                // <Circle
-                //   x={36 + (getRow(currSpace) * (36 + 18))}
-                //   y={36 + (getCol(currSpace) * (36 + 27)) + (getRow(currSpace) % 2)*31}
-                //   radius={72*(props.playerState.role === 'alien' ? 2.1 : 1.25)}
-                //   strokeWidth={3}
-                //   stroke={props.playerState.role === 'alien' ? 'red' : 'green'}
-                //   fill={''}
-                //   opacity={1}
-                //   //fill={'green'}
-                // />
-                :
-                <div />
-              }*/}
+              {currSpace !== prevSpace ?
+                  <Arrow
+                    points={[getRow(prevSpace), getCol(prevSpace), getRow(currSpace), getCol(currSpace)]}
+                    pointerLength={10}
+                    pointerWidth={4}
+                    fill='black'
+                    stroke='black'
+                    strokeWidth={2}
+                    opacity={0.7}
+                  /> :
+                  <div />
+                }
               </Layer>
               <Layer ref={layerRef}>
                 {lines.map((line, i) => (
