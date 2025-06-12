@@ -55,7 +55,6 @@ function GameSession(props) {
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [spaceSelector, setSpaceSelector] = useState(spaceOptions[0]);
 
-
   // document.addEventListener('keydown', function(event) {
   //   const keycode = parseInt(event.keyCode);
   //   if ((keycode >= 49 && keycode <= (48 + spaceOptions.length)) && mapEditor) {
@@ -210,26 +209,24 @@ function GameSession(props) {
 
 
   const hexClickHandle = (e, id) => {
-    const new_x = id.match(/\D/g)[0].charCodeAt(0);
-    const old_x = currSpace.match(/\D/g)[0].charCodeAt(0);
-    const new_y = parseInt(id.match(/\d+/g)[0]);
-    const old_y = parseInt(currSpace.match(/\d+/g)[0]);
+    if (props.noiseTileSelectEn) {
+      props.setNoiseTile(id);
+    } else {
+      const new_x = id.match(/\D/g)[0].charCodeAt(0);
+      const old_x = currSpace.match(/\D/g)[0].charCodeAt(0);
+      const new_y = parseInt(id.match(/\d+/g)[0]);
+      const old_y = parseInt(currSpace.match(/\d+/g)[0]);
 
-    let path = findShortestPath(prevSpace, id, props.mapSelection.value.tiles);
+      let path = findShortestPath(prevSpace, id, props.mapSelection.value.tiles);
 
-    let dx = new_x - old_x;
-    let dy = new_y - old_y;
+      let dx = new_x - old_x;
+      let dy = new_y - old_y;
 
-    const movement_limit = props.playerState.maxMovement;
+      const movement_limit = props.playerState.maxMovement;
 
-    if ((path.length - 1) <= movement_limit) {
-      setCurrSpace(id);
-      // props.socket.emit('tileClick', {
-      //   tile: id,
-      //   tileType: props.mapSelection.value.tiles[id].tileType,
-      //   lobbyId: props.lobby.lobbyId,
-      //   playerId: props.userName
-      // });
+      if ((path.length - 1) <= movement_limit) {
+        setCurrSpace(id);
+      }
     }
   }
 
@@ -461,9 +458,10 @@ function GameSession(props) {
                       playerId: props.userName
                     });
                   }}
-                  style={{width: '100%', marginTop: '0em', marginLeft: '0em'}}
+                  disable={currSpace === prevSpace}
+                  style={{width: '90%', marginTop: '0em', marginLeft: '0em', borderColor: 'grey', backgroundColor: currSpace === prevSpace ?  `var(--color-warning)` : `var(--color-primary)`}}
                 >
-                  End Turn
+                  {currSpace === prevSpace ? "Must Move" : "End Turn"}
                 </Button>
               </Col>
             </Row>

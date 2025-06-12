@@ -57,8 +57,11 @@ function App() {
   const [gameCodeId, setGameCodeId] = useState('');
   //const [role, setRole] = useState('');
   const [playerState, setPlayerState] = useState();
-  const [playerEventFlag, setPlayerEventFlag] = useState(undefined);
+  const [notificationEvent, setNotificationEvent] = useState(undefined);
   const [newUsernameUnavailable, setNewUsernameUnavailable] = useState(false);
+  const [noiseTileSelectEn, setNoiseTileSelectEn] = useState(false);
+  const [noiseTile, setNoiseTile] = useState('');
+  const [updateToastID, setUpdateToastID] = useState();
 
 
   const lobbyRef = useRef(lobby);
@@ -96,12 +99,11 @@ function App() {
     });
 
     socket.on('playerEvent', (data) => {
-      setPlayerEventFlag(data);
+      setNotificationEvent({...data, 'state': 'playerEvent'});
     });
 
     socket.on('roomEvent', (data) => {
-      //setPlayerEventFlag(data);
-      console.log(data);
+      setNotificationEvent({...data, 'state': 'roomEvent'});
     });
 
     // socket.on('lobbyPlayerJoin', (data) => {
@@ -149,6 +151,30 @@ function App() {
   }, []);
 
 
+  const noiseTileToast = () => {
+    return (
+      <div>
+        <span> Select tile to generate noise at: {noiseTile} </span>
+        <Button 
+          className='primaryButton'
+          onClick={(e) => {
+            setNoiseTileSelectEn(false);
+            socket.emit('noiseInSector', {
+              state: 'noise',
+              tile: noiseTile,
+              playerId: notificationEvent.playerId,
+              numHeldCards: notificationEvent.playerNumHeldCards,
+              lobbyId: lobby.lobbyId
+            });
+            toast.dismiss(updateToastID);
+            setUpdateToastID();
+            setNoiseTile('');
+            setNotificationEvent(undefined);
+          }}> Submit </Button>
+      </div>
+    );
+  }
+
   useEffect(() => {
     if (lobbyId !== '') {
       setLobby(lobbies.filter((lobby) => lobby.lobbyId === lobbyId)[0]);
@@ -157,10 +183,18 @@ function App() {
 
 
   useEffect(() => {
-    if (playerEventFlag !== undefined) {
-      var card = playerEventFlag.card;
-      var tile = playerEventFlag.tile;
-      var noiseTileSource = '';
+    toast.update(updateToastID, {
+      render: noiseTileToast,
+      toastId: updateToastID
+    });
+  }, [noiseTile]);
+
+
+  useEffect(() => {
+    if (notificationEvent !== undefined) {
+      var card = notificationEvent.card;
+      var tile = notificationEvent.tile;
+
       if (card === 'silence') {
         toast.success(
           <div>
@@ -168,57 +202,55 @@ function App() {
           </div>,
           {
             closeOnClick: false,
-            autoClose: false
+            autoClose: 5000
           }
         );  
       } else if (card.includes('silence -')) {
         toast.success(
           <div>
             Silence in all sectors + Item!
-            {playerEventFlag}
+            {card.split(' - ')[1]}
           </div>,
           {
             closeOnClick: false,
-            autoClose: false
+            autoClose: 5000
           }
         ); 
-      } else if (card === 'any') {
-        toast.success(
-          <div>
-            Enter tile to generate noise at: 
-            {/*Enter tile to generate noise:  <input value={noiseTileSource} onChange={(e) => { noiseTileSource += e.target.value }}/>*/}
-          </div>,
-          {
-            closeOnClick: false,
-            autoClose: false
-          }
-        );
-      } else {
+      } else if (card === 'noise') {
         toast.error(
           <div>
-            You hear a noise your sector
+            You hear a noise in sector {tile}
           </div>,
+          {
+            closeOnClick: false,
+            autoClose: 5000
+          }
+        );        
+      } else if (card === 'any') {
+        setNoiseTileSelectEn(true);
+        setUpdateToastID(toast.warning(
+          noiseTileToast,
           {
             closeOnClick: false,
             autoClose: false
           }
-        );        
+        ));
+
+        return;
       }
 
-      if (noiseTileSource === '') {
-        noiseTileSource = tile;
+      if (notificationEvent.state === 'playerEvent') {
+        socket.emit('noiseInSector', {
+          state: card.includes('silence') ? 'silence' : 'noise',
+          tile: tile,
+          playerId: notificationEvent.playerId,
+          numHeldCards: notificationEvent.playerNumHeldCards,
+          lobbyId: lobby.lobbyId
+        });
       }
-
-      socket.emit('noiseInSector', {
-        state: card.includes('silence') ? 'silence' : 'noise',
-        tile: noiseTileSource,
-        playerId: playerEventFlag.playerId,
-        numHeldCards: playerEventFlag.playerNumHeldCards,
-        lobbyId: lobby.lobbyId
-      });
-      setPlayerEventFlag(undefined);
+      setNotificationEvent(undefined);
     }
-  }, [playerEventFlag]);
+  }, [notificationEvent]);
 
 
   useEffect(() => {
@@ -330,6 +362,8 @@ function App() {
               gameCodeId={gameCodeId}
               playerName={tempUserName}
               playerState={playerState}
+              noiseTileSelectEn={noiseTileSelectEn}
+              setNoiseTile={setNoiseTile}
             />
           }/>
         </Routes>
