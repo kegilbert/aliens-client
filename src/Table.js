@@ -37,7 +37,7 @@ const DatatablePage = (props) => {
           <BootstrapTable
             { ...innerprops.baseProps }
             // rowStyle={{ fontSize: 'small', border: '1px solid black' }}
-            rowStyle={{ fontSize: 'small' }}
+            rowStyle={ props.rowStyle } //{{ ...props.rowStyle, fontSize: 'small' }}
             editCellStyle={{ fontSize: 'small' }}
             editorStyle={{ fontSize: 'small' }}
             cellEdit={ cellEditFactory({ mode: 'click', blurToSave: true, afterSaveCell }) }

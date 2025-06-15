@@ -51,6 +51,8 @@ body {
   --color-warning: #f0a967;
   --color-danger: #ff6961;
   --color-error: #ff6961;
+
+  --toastify-toast-width: 35vw !important;
 }
 
 

@@ -62,6 +62,9 @@ function App() {
   const [noiseTileSelectEn, setNoiseTileSelectEn] = useState(false);
   const [noiseTile, setNoiseTile] = useState('');
   const [updateToastID, setUpdateToastID] = useState();
+  const [turnHistory, setTurnHistory] = useState([]);
+  const [playerTurnOrder, setPlayerTurnOrder] = useState([]);
+  const [currPlayer, setCurrPlayer] = useState('');
 
 
   const lobbyRef = useRef(lobby);
@@ -106,6 +109,10 @@ function App() {
       setNotificationEvent({...data, 'state': 'roomEvent'});
     });
 
+    socket.on('updateCurrentPlayer', (data) => {
+      setCurrPlayer(data.currPlayer);
+    });
+
     // socket.on('lobbyPlayerJoin', (data) => {
     //   let updated_lobby = {...lobbyRef.current};
     //   updated_lobby.players.push({playerName: data.playerName, playerReady: false});
@@ -141,6 +148,11 @@ function App() {
       navigate(`/gamesession/${lobbyRef.current.lobbyId}`, {replace: true});
     });
 
+    socket.on('turnOrder', (data) => {
+      setPlayerTurnOrder(data.turnOrder);
+      setCurrPlayer(data.currPlayer);
+    });
+
     socket.on('connect', (data) => {
       socket.emit('getLobbies', {});
       socket.emit('getMapList', {});
@@ -153,25 +165,34 @@ function App() {
 
   const noiseTileToast = () => {
     return (
-      <div>
-        <span> Select tile to generate noise at: {noiseTile} </span>
-        <Button 
-          className='primaryButton'
-          onClick={(e) => {
-            setNoiseTileSelectEn(false);
-            socket.emit('noiseInSector', {
-              state: 'noise',
-              tile: noiseTile,
-              playerId: notificationEvent.playerId,
-              numHeldCards: notificationEvent.playerNumHeldCards,
-              lobbyId: lobby.lobbyId
-            });
-            toast.dismiss(updateToastID);
-            setUpdateToastID();
-            setNoiseTile('');
-            setNotificationEvent(undefined);
-          }}> Submit </Button>
-      </div>
+      <Container>
+        <Row>
+          <Col>
+            <span> Select tile to generate noise at: {noiseTile} </span>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <Button 
+              className='primaryButton'
+              onClick={(e) => {
+                setNoiseTileSelectEn(false);
+                socket.emit('noiseInSector', {
+                  state: 'noise',
+                  tile: noiseTile,
+                  playerId: notificationEvent.playerId,
+                  numHeldCards: notificationEvent.playerNumHeldCards,
+                  lobbyId: lobby.lobbyId,
+                  includeSelf: true
+                });
+                toast.dismiss(updateToastID);
+                setUpdateToastID();
+                setNoiseTile('');
+                setNotificationEvent(undefined);
+              }}> Submit </Button>
+            </Col>
+          </Row>
+      </Container>
     );
   }
 
@@ -194,10 +215,17 @@ function App() {
     if (notificationEvent !== undefined) {
       var card = notificationEvent.card;
       var tile = notificationEvent.tile;
+      var player = notificationEvent.playerId;
+
+      if (card !== 'any') {
+        setTurnHistory([...turnHistory, {turn: turnHistory.length, event: card.split(' - ')[0], tile: tile, player: player}]);
+      }
 
       if (card === 'silence') {
         toast.success(
           <div>
+            <h3>{player}</h3>
+            <hr/>
             Silence in all sectors
           </div>,
           {
@@ -208,6 +236,8 @@ function App() {
       } else if (card.includes('silence -')) {
         toast.success(
           <div>
+            <h3>{player}</h3>
+            <hr/>
             Silence in all sectors + Item!
             {card.split(' - ')[1]}
           </div>,
@@ -219,6 +249,8 @@ function App() {
       } else if (card === 'noise') {
         toast.error(
           <div>
+            <h3>{player}</h3>
+            <hr/>
             You hear a noise in sector {tile}
           </div>,
           {
@@ -232,7 +264,9 @@ function App() {
           noiseTileToast,
           {
             closeOnClick: false,
-            autoClose: false
+            autoClose: false,
+            draggable: false,
+            closeButton: false
           }
         ));
 
@@ -242,10 +276,11 @@ function App() {
       if (notificationEvent.state === 'playerEvent') {
         socket.emit('noiseInSector', {
           state: card.includes('silence') ? 'silence' : 'noise',
-          tile: tile,
+          tile: card.includes('silence') ? '-' : tile,
           playerId: notificationEvent.playerId,
           numHeldCards: notificationEvent.playerNumHeldCards,
-          lobbyId: lobby.lobbyId
+          lobbyId: lobby.lobbyId,
+          includeSelf: false
         });
       }
       setNotificationEvent(undefined);
@@ -364,6 +399,9 @@ function App() {
               playerState={playerState}
               noiseTileSelectEn={noiseTileSelectEn}
               setNoiseTile={setNoiseTile}
+              turnHistory={turnHistory}
+              playerTurnOrder={playerTurnOrder}
+              currPlayer={currPlayer}
             />
           }/>
         </Routes>
@@ -445,7 +483,7 @@ function App() {
         //   enter: 'slideIn',
         //   exit: 'slideOut',
         // })}
-        draggablePercent={35}
+        draggablePercent={20}
       />
     </div>
   );
