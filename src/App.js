@@ -213,15 +213,32 @@ function App() {
 
   useEffect(() => {
     if (notificationEvent !== undefined) {
-      var card = notificationEvent.card;
-      var tile = notificationEvent.tile;
+      var card   = notificationEvent.card;
+      var tile   = notificationEvent.tile;
       var player = notificationEvent.playerId;
+      var event  = card.split(' - ')[0];
 
-      if (card !== 'any') {
-        setTurnHistory([...turnHistory, {turn: turnHistory.length, event: card.split(' - ')[0], tile: tile, player: player}]);
+      if (event === 'attack') {
+        player = `${player} -> ${notificationEvent.targetPlayer}`
       }
 
-      if (card === 'silence') {
+      if (card !== 'any') {
+        setTurnHistory([...turnHistory, {turn: turnHistory.length, event: event, tile: tile, player: player}]);
+      }
+
+      if (card === 'attack') {
+        toast.error(
+          <div>
+            <h3>{player}</h3>
+            <hr/>
+            {notificationEvent.targetPlayer} killed by {player} at: {tile}
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: 5000
+          }
+        );   
+      } else if (card === 'silence') {
         toast.success(
           <div>
             <h3>{player}</h3>

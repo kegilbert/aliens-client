@@ -30,6 +30,7 @@ import {
   IoPencil
 } from 'react-icons/io5'; // MIT Licensed icons
 import DatatablePage from './Table';
+import SlidingPanel from 'react-sliding-side-panel';
 
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -54,6 +55,7 @@ function GameSession(props) {
   const [prevSpace, setPrevSpace] = useState();
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [spaceSelector, setSpaceSelector] = useState(spaceOptions[0]);
+  const [itemTrayPanelOpen, setItemTrayPanelOpen] = useState(false);
 
   // document.addEventListener('keydown', function(event) {
   //   const keycode = parseInt(event.keyCode);
@@ -370,13 +372,13 @@ function GameSession(props) {
     return (
       <>
         <Container fluid>
-        <Row className='align-items-center d-flex' style={{height: '75vh'}}>
-          <Col xs='8' xl='8' className='align-items-center justify-content-center d-flex' style={{height: '75vh'}}>
+        <Row className='d-flex' style={{height: '60vh'}}>
+          <Col xs='8' xl='8' className='align-items-center d-flex' style={{height: '75vh'}}>
             <Stage
               pixelRatio={1.5}
               style={{marginTop: '1em', display: 'flex', justifyContent: 'center'}}
-              width={window.innerWidth * 0.69}  // 10/12 col width
-              height={window.innerHeight * 0.95}
+              width={window.innerWidth * 0.65}  // 10/12 col width
+              height={window.innerWidth > 1400 ? window.innerHeight * 0.85 : window.innerHeight * 0.60}
               onWheel={(e) => {
                 e.evt.preventDefault();
                 if (e.evt.deltaY > 15 || e.evt.deltaY < 15) {
@@ -470,20 +472,50 @@ function GameSession(props) {
               }
               </Col>
             </Row>
-            <Row xs='12'>
-              <Col xs='12' style={{overflowY: 'auto', height: '45vh'}}>
-                <DatatablePage
-                  keyField='turn'
-                  columns={[
-                    {dataField: 'turn', text: 'Turn', sort: true, editable: false},
-                    {dataField: 'player', text: 'Player', sort: true, editable: false, style: {overflow: 'hidden', whiteSpace: 'nowrap'}},
-                    {dataField: 'tile', text: 'tile', editable: false},
-                    {dataField: 'event', text: 'Event', editable: false}
-                  ]}
-                  data={props.turnHistory}
-                />
-              </Col>
-            </Row>
+            { (window.innerWidth > 1400) ? 
+              <Row xs='12'>
+                <Col xs='12' style={{overflowY: 'auto', height: '45vh'}}>
+                  <DatatablePage
+                    keyField='turn'
+                    rowStyle={(row, rowIndex) => {return {backgroundColor: row.event === 'attack' ? `var(--color-danger)` : 'inherit'}; }}
+                    columns={[
+                      {dataField: 'turn', text: 'Turn', sort: true, editable: false},
+                      {dataField: 'player', text: 'Player', sort: true, editable: false, style: {overflow: 'hidden', whiteSpace: 'nowrap'}},
+                      {dataField: 'tile', text: 'tile', editable: false},
+                      {dataField: 'event', text: 'Event', editable: false}
+                    ]}
+                    data={props.turnHistory}
+                  />
+                </Col>
+              </Row>:
+                <div />
+            }
+          </Col>
+        </Row> 
+        { (window.innerWidth <= 1400) ?  
+              <Row xs='12'>
+                <Col xs='12' style={{overflowY: 'auto', height: '25vh'}}>
+                  <DatatablePage
+                    keyField='turn'
+                    rowStyle={(row, rowIndex) => {return {backgroundColor: row.event === 'attack' ? `var(--color-danger)` : 'inherit'}; }}
+                    columns={[
+                      {dataField: 'turn', text: 'Turn', sort: true, editable: false},
+                      {dataField: 'player', text: 'Player', sort: true, editable: false, style: {overflow: 'hidden', whiteSpace: 'nowrap'}},
+                      {dataField: 'tile', text: 'tile', editable: false},
+                      {dataField: 'event', text: 'Event', editable: false}
+                    ]}
+                    data={props.turnHistory}
+                  />
+                </Col>
+              </Row>
+              :
+              <div />
+        }
+        <Row className='align-items-center d-flex'>
+          <Col xs='12' style={{position: 'fixed', bottom: '6em'}}>
+            <Button className='warningButton' style={{width: '100%', height: '2.5em'}} onClick={(e)=>{setItemTrayPanelOpen(!itemTrayPanelOpen)}}>
+              Items: 0
+            </Button>
           </Col>
         </Row>
         <Row className='align-items-center d-flex'>
@@ -500,6 +532,17 @@ function GameSession(props) {
             </h4>
           </Col>
         </Row>
+        <SlidingPanel
+          type='bottom'
+          isOpen={itemTrayPanelOpen}
+          backdropClicked={() => setItemTrayPanelOpen(false)}
+          noBackdrop={false}
+          size={ 30 }
+        >
+          <div style={{overflow: 'hidden', backgroundColor: '#B5BEC6', height: '100%', paddingBottom: '5em', opacity: '90%'}}>
+            Balls 
+          </div>
+        </SlidingPanel>
       </Container>
       </>
     );
