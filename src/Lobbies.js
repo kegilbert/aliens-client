@@ -188,7 +188,7 @@ function Lobbies(props) {
           <DatatablePage
             keyField='lobbyId'
             columns={lobbyColumns}
-            data={props.lobbies}
+            data={props.lobbies.filter(function(lobby) { return !lobby.inProgress })}
             search={true}
             searchInput={props.searchInput}
             setSearchInput={props.setSearchInput}

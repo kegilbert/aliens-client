@@ -27,14 +27,16 @@ import {
 
 import {
   IoPersonCircleOutline,
-  IoPencil
+  IoPencil,
+  IoCaretUp,
+  IoCaretDown
 } from 'react-icons/io5'; // MIT Licensed icons
 import DatatablePage from './Table';
 import SlidingPanel from 'react-sliding-side-panel';
 
 import 'react-toastify/dist/ReactToastify.css';
-import './App.css';
 import 'react-bootstrap-table-next/dist/react-bootstrap-table2.css';
+import './App.css';
 
 import Home from './Home';
 import { defaultMapNames } from './defaultMapNames';
@@ -345,6 +347,7 @@ function GameSession(props) {
   const generatePlayerPath = () => {
     var path = [];
     var tile_history = [];
+    let uncertainty_r = 0;
 
     props.turnHistory.filter(function(turn) {return turn.player === pathViewPlayer}).forEach((turn) => {
       if (turn.tile !== '-') {
@@ -364,13 +367,21 @@ function GameSession(props) {
         }
 
         tile_history.push(turn.tile);
+        uncertainty_r = 0;
       } else if (tile_history.length > 0) {
         let prevSpace = tile_history[tile_history.length - 1];
+
+        uncertainty_r += 1;
+
+        if (uncertainty_r > 1) {
+          path.pop();
+        }
+
         path.push(
           <Circle
             x={getRow(prevSpace)}
             y={getCol(prevSpace)}
-            radius={72}
+            radius={72 * uncertainty_r}
             strokeWidth={3}
             stroke={'pink'}
             // fill={'rgba(66, 245, 245, 0.0)'}
@@ -588,7 +599,12 @@ function GameSession(props) {
                     keyField='turn'
                     rowStyle={(row, rowIndex) => {return {backgroundColor: row.event === 'attack' ? `var(--color-danger)` : 'inherit'}; }}
                     columns={[
-                      {dataField: 'turn', text: 'Turn', sort: true, editable: false},
+                      {
+                        dataField: 'turn',
+                        text: 'Turn',
+                        sort: true, 
+                        editable: false
+                      },
                       {dataField: 'player', text: 'Player', sort: true, editable: false, style: {overflow: 'hidden', whiteSpace: 'nowrap'}},
                       {dataField: 'tile', text: 'tile', editable: false},
                       {dataField: 'event', text: 'Event', editable: false}
