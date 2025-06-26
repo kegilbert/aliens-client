@@ -34,6 +34,7 @@ import SlidingPanel from 'react-sliding-side-panel';
 
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import 'react-bootstrap-table-next/dist/react-bootstrap-table2.css';
 
 import Home from './Home';
 import { defaultMapNames } from './defaultMapNames';
@@ -56,6 +57,7 @@ function GameSession(props) {
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [spaceSelector, setSpaceSelector] = useState(spaceOptions[0]);
   const [itemTrayPanelOpen, setItemTrayPanelOpen] = useState(false);
+  const [pathViewPlayer, setPathViewPlayer] = useState('');
 
   // document.addEventListener('keydown', function(event) {
   //   const keycode = parseInt(event.keyCode);
@@ -339,6 +341,47 @@ function GameSession(props) {
     setIsDrawing(false);
   };
 
+ 
+  const generatePlayerPath = () => {
+    var path = [];
+    var tile_history = [];
+
+    props.turnHistory.filter(function(turn) {return turn.player === pathViewPlayer}).forEach((turn) => {
+      if (turn.tile !== '-') {
+        if (tile_history.length > 0) { 
+          let prevSpace = tile_history[tile_history.length - 1];
+          path.push(
+            <Arrow
+              points={[getRow(prevSpace), getCol(prevSpace), getRow(turn.tile), getCol(turn.tile)]}
+              pointerLength={10}
+              pointerWidth={4}
+              fill='cyan'
+              stroke='cyan'
+              strokeWidth={2}
+              opacity={0.7}
+            />
+          );
+        }
+
+        tile_history.push(turn.tile);
+      } else if (tile_history.length > 0) {
+        let prevSpace = tile_history[tile_history.length - 1];
+        path.push(
+          <Circle
+            x={getRow(prevSpace)}
+            y={getCol(prevSpace)}
+            radius={72}
+            strokeWidth={3}
+            stroke={'pink'}
+            // fill={'rgba(66, 245, 245, 0.0)'}
+          />
+        );
+      }
+    });
+
+    return path;
+  }
+
 
   const primarySelectStyles = {
     control: base => ({
@@ -347,6 +390,20 @@ function GameSession(props) {
       boxShadow: 'none',
       marginBottom: '1em',
     })
+  };
+
+  const playerTableSelectRow = {
+    mode: 'radio',
+    hideSelectColumn: true,
+    clickToSelect: true,
+    clickToEdit: false,
+    onSelect: (row, isSelect, rowIndex, e) => {
+      if (row.player === pathViewPlayer) {
+        setPathViewPlayer('');
+      } else {
+        setPathViewPlayer(row.player);
+      }
+    }
   };
 
   const getRow = (id) => {
@@ -418,6 +475,9 @@ function GameSession(props) {
                   <div />
                 }
               </Layer>
+              <Layer listening={false}>
+              {generatePlayerPath()}
+              </Layer>
               <Layer ref={layerRef}>
                 {lines.map((line, i) => (
                   <Line
@@ -477,10 +537,39 @@ function GameSession(props) {
                 <Col xs='12' style={{overflowY: 'auto', height: '45vh'}}>
                   <DatatablePage
                     keyField='turn'
-                    rowStyle={(row, rowIndex) => {return {backgroundColor: row.event === 'attack' ? `var(--color-danger)` : 'inherit'}; }}
+                    rowStyle={(row, rowIndex) => {
+                      let bgColor = 'inherit';
+
+                      if (row.event === 'attack') {
+                        bgColor = `var(--color-danger)`;
+                      } else if (row.player === pathViewPlayer) { // Attack bgColor takes precedence
+                        bgColor = `var(--color-info)`;
+                      }
+                      return {backgroundColor: bgColor};
+                    }}
+                    selectRow={playerTableSelectRow}
                     columns={[
                       {dataField: 'turn', text: 'Turn', sort: true, editable: false},
-                      {dataField: 'player', text: 'Player', sort: true, editable: false, style: {overflow: 'hidden', whiteSpace: 'nowrap'}},
+                      { dataField: 'player',
+                        text: 'Player',
+                        sort: true,
+                        // sortFunc: (a, b, order, dataField, rowA, rowB) => {
+                        //   // Your custom sorting logic here
+                        //   // let playerA = a.split(' -> ')[0];
+                        //   // let playerB = b.split(' -> ')[0];
+                        //   a = a.split(' -> ')[0];
+                        //   b = b.split(' -> ')[0];
+                        //   console.log(a);
+                        //   console.log(b);
+
+                        //   if (order === 'asc') {
+                        //     return b - a;
+                        //   }
+                        //   return a - b; 
+                        // },
+                        editable: false,
+                        style: {overflow: 'hidden', whiteSpace: 'nowrap'}
+                      },
                       {dataField: 'tile', text: 'tile', editable: false},
                       {dataField: 'event', text: 'Event', editable: false}
                     ]}

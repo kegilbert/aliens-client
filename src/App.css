@@ -140,3 +140,8 @@ body {
   box-shadow: none !important;
   filter: brightness(0.9);
 }
+
+
+.table {
+   --bs-table-bg: ; /* or --bs-table-bg: transparent; */
+}

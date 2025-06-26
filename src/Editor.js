@@ -310,6 +310,7 @@ function Editor(props) {
           <Stage
             pixelRatio={1.5}
             style={{marginTop: '1em', display: 'flex', justifyContent: 'center'}}
+            //width={viewMode === 'viewOnly' ? '25%' : window.innerWidth * (window.innerWidth < 1000 ? 1 : 0.75)}
             width={window.innerWidth * (window.innerWidth < 1000 ? 1 : 0.75)}
             height={window.innerHeight * (window.innerHeight < 700 ? 0.55 : 0.85)}
             onWheel={(e) => {

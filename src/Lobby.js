@@ -141,7 +141,7 @@ function Lobby(props) {
             <span style={{display: 'inline', verticalAlign: 'middle', fontSize: '1.5em', color: 'red'}}> Must be lobby host to edit map </span>
           </Col>
         }
-        <Col xs='4' className='d-flex justify-content-center' style={{marginLeft: '-10em'}}>
+        <Col xs='4' className='d-flex justify-content-center' style={{width: '30%'}}>
           { props.lobby.mapLabel !== '' ?
           <Editor
               userName={props.userName}
