@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Navbar,
   Nav,
@@ -60,6 +60,34 @@ function GameSession(props) {
   const [spaceSelector, setSpaceSelector] = useState(spaceOptions[0]);
   const [itemTrayPanelOpen, setItemTrayPanelOpen] = useState(false);
   const [pathViewPlayer, setPathViewPlayer] = useState('');
+  const [sharedAngle, setSharedAngle] = useState(0);
+  const [radarAnimationEn, setRadarAnimationEn] = useState(false);
+
+  const uncertaintyCircleRef      = useRef();
+  const uncertaintyCircleRefOuter = useRef();
+  const sharedAngleRef = useRef(sharedAngle);
+
+  // const animateCircle = () => {
+  //   if (uncertaintyCircleRef.current) {
+  //     const currentX = uncertaintyCircleRef.current.x();
+  //     const currentY = uncertaintyCircleRef.current.y();
+  //     const currentR = uncertaintyCircleRefOuter.current.radius();
+
+  //     uncertaintyCircleRef.current.radius = currentR;
+
+  //     new Konva.Tween({
+  //       node: uncertaintyCircleRef.current,
+  //       duration: 1, // seconds
+  //       x: currentX,      // target x position
+  //       y: currentY,
+  //       radius: 0,
+  //       fill: 'pink', // target fill color
+  //       opacity: 0.5,
+  //       easing: Konva.Easings.StrongEaseOut, // easing function
+  //       onFinish: animateCircle
+  //     }).play();
+  //   }
+  // };
 
   // document.addEventListener('keydown', function(event) {
   //   const keycode = parseInt(event.keyCode);
@@ -74,7 +102,15 @@ function GameSession(props) {
     props.socket.on("connect", () => {  console.log(props.socket.id); });
     props.socket.on("responseMessage", (data) => {  console.log(data); });
     props.socket.on("connect_error", (err) => {  console.log(`connect_error due to ${err.message}`);});
+
+    if (radarAnimationEn) {
+      const intervalId = window.setInterval(() => {setSharedAngle(sharedAngleRef.current + 5)}, 30);
+    }
   }, []);
+
+  useEffect(() => {
+    sharedAngleRef.current = sharedAngle;
+  }, [sharedAngle]);
 
 
   useEffect(() => {
@@ -82,7 +118,7 @@ function GameSession(props) {
       setCurrSpace(props.playerState.pos);
       setPrevSpace(props.playerState.pos);
     }
-  }, props.playerState);
+  }, [props.playerState]);
 
 
   const XY2Tile = (x, y) => {
@@ -205,12 +241,49 @@ function GameSession(props) {
           let nx = x + dir[0];
           let ny = y + dir[1];
 
-          if (Object.keys(grid).includes(`${String.fromCharCode('A'.charCodeAt(0) + nx)}${ny.toString().padStart(2, '0')}`)) {
-              neighbors.push([nx, ny]);
+          let tile = `${String.fromCharCode('A'.charCodeAt(0) + nx)}${ny.toString().padStart(2, '0')}`;
+
+          if (Object.keys(grid).includes(tile) && props.mapSelection.value.tiles[tile].status !== 'inaccessible') {
+            neighbors.push([nx, ny]);
           }
       }
 
       return neighbors;
+  }
+
+
+  const generateInaccessibleTile = (tile) => {
+    let x = getRow(tile);
+    let y = getCol(tile);
+
+    let pointOffsetX = -32; //(x % 2 === 0) ? -32 : -30;
+    let pointOffsetY = -6; //(y % 2 === 0) ? -6   : -6;
+    let rotation     = 27; //(x % 2 === 0) ? 27 : 27;
+
+    return (
+      <>
+       <Line
+        points = {[pointOffsetX, pointOffsetY, 28, 0]}
+         // points={[pointOffsetX, pointOffsetY, 32 + pointOffsetY, 0]} // Start at center, end calculated based on angle
+          stroke={'black'}
+          x={x}
+          y={y}
+          rotation={rotation}
+          opacity={0.6}
+          strokeWidth={2}
+        /> 
+{/*        <Line
+          points = {[pointOffsetX+4, pointOffsetY, 30, 0]}
+        //  points={[pointOffsetX - pointOffsetY, pointOffsetY, pointOffsetX*(-1), 0]} // Start at center, end calculated based on angle
+          stroke={'black'}
+          x={x}
+          y={y}
+          rotation={360-rotation}
+          opacity={0.6}
+          strokeWidth={2}
+        /> */}
+      </>
+    );
   }
 
 
@@ -230,7 +303,7 @@ function GameSession(props) {
 
       const movement_limit = props.playerState.maxMovement;
 
-      if ((path.length - 1) <= movement_limit) {
+      if (path !== null && ((path.length - 1) <= movement_limit)) {
         setCurrSpace(id);
       }
     }
@@ -246,6 +319,8 @@ function GameSession(props) {
         let id = String.fromCharCode(0x41 + col) + (row).toString().padStart(2, '0');
 
         if (id in props.mapSelection.value.tiles && props.mapSelection.value.tiles[id].tileType !== 'remove') {
+          let pathLength = findShortestPath(prevSpace, id, props.mapSelection.value.tiles);
+          pathLength = (pathLength === null) ? 0 : pathLength.length - 1;
           hexagons.push(
             <>
             <Text
@@ -273,11 +348,11 @@ function GameSession(props) {
                 0,
                 props.mapSelection.value.tiles[id].color,
                 0.5,
-                (id == currSpace) ?
+                (id === currSpace) ?
                   '#51ff0d' :
-                  (id == prevSpace && currSpace !== prevSpace) ?
+                  (id === prevSpace && currSpace !== prevSpace) ?
                     'blue' :
-                    (findShortestPath(prevSpace, id, props.mapSelection.value.tiles).length - 1) <= props.playerState.maxMovement ? 'yellow' :
+                    (pathLength > 0 && pathLength <= props.playerState.maxMovement) ? 'yellow' :
                     props.mapSelection.value.tiles[id].color
               ]}
 
@@ -290,6 +365,31 @@ function GameSession(props) {
               opacity={0.50}
               rotation={90}
             />
+            {
+              //props.mapSelection.value.tiles[id].tileType === 'escapepod' ?
+              props.mapSelection.value.tiles[id].status === 'inaccessible' ?
+                generateInaccessibleTile(id)
+              // <>
+              //  <Line
+              //     points={[-34, -3, 29, 0]} // Start at center, end calculated based on angle
+              //     stroke={'black'}
+              //     x={getRow(id)}
+              //     y={getCol(id)}
+              //     rotation={33}
+              //     strokeWidth={2}
+              //   /> 
+              //   <Line
+              //     points={[-29, -4, 34, 0]} // Start at center, end calculated based on angle
+              //     stroke={'black'}
+              //     x={getRow(id)}
+              //     y={getCol(id)}
+              //     rotation={360-33}
+              //     strokeWidth={2}
+              //   /> 
+              // </>
+                :
+                <div/>
+            }
             </>
           );
         }
@@ -342,8 +442,8 @@ function GameSession(props) {
   const handleMouseUp = () => {
     setIsDrawing(false);
   };
-
  
+
   const generatePlayerPath = () => {
     var path = [];
     var tile_history = [];
@@ -378,15 +478,32 @@ function GameSession(props) {
         }
 
         path.push(
+          <>
           <Circle
             x={getRow(prevSpace)}
             y={getCol(prevSpace)}
             radius={72 * uncertainty_r}
             strokeWidth={3}
             stroke={'pink'}
+            // ref={uncertaintyCircleRefOuter}
             // fill={'rgba(66, 245, 245, 0.0)'}
           />
+          { radarAnimationEn ?
+             <Line
+                points={[0, 0, 72 * uncertainty_r, 0]} // Start at center, end calculated based on angle
+                stroke={'pink'}
+                x={getRow(prevSpace)}
+                y={getCol(prevSpace)}
+                rotation={sharedAngle}
+                strokeWidth={2}
+                shadowOffset={15}
+                shadowBlur={30}
+              /> :
+              <div />
+          }
+          </>
         );
+      //  animateCircle();
       }
     });
 
@@ -426,7 +543,7 @@ function GameSession(props) {
     var row = parseInt(id.match('[0-9]+')[0]);
     var col = (id.match('[A-Z]')[0].charCodeAt(0) - 'A'.charCodeAt(0));
     console.log(col);
-    var col_adjust_const = (col % 2 === 0) ? 0 : 36;
+    var col_adjust_const = (col % 2 === 0) ? 3 : 36;
     var ret = 36 + (row * (36+27)) + col_adjust_const;
 
     return ret;
@@ -510,7 +627,12 @@ function GameSession(props) {
             {/*<div style={{position: 'absolute', top: '5em'}}>*/}
                 <DatatablePage
                   keyField='player'
-                  rowStyle={(row, rowIndex) => {return {backgroundColor: row.player === props.currPlayer ? `var(--color-primary)` : 'inherit'}; }}
+                  rowStyle={(row, rowIndex) => {
+                    // let bgColor = 'inherit';
+
+                    // if (props.players)
+                    return {backgroundColor: row.player === props.currPlayer ? `var(--color-primary)` : 'inherit'}; 
+                  }}
                   columns={[
                     {dataField: 'player', text: 'Player'
                   }]}
@@ -526,6 +648,22 @@ function GameSession(props) {
                   <Button
                     className='primaryButton'
                     onClick={(e) => {
+                      if (props.turnHistory.filter(function(turn) {return turn.player === props.currPlayer}).length === 0) {
+                        // This was turn one, disable access to spawn point from here on out
+                        let updatedLobbyMap = {...props.mapSelection};
+                       // updatedLobbyMap.value.tiles[prevSpace].status = 'inaccessible'; 
+
+                        Object.keys(updatedLobbyMap.value.tiles).forEach((tile, idx) => {
+                          let tileType = updatedLobbyMap.value.tiles[tile].tileType;
+                          if (tileType === 'aspawn' || tileType === 'hspawn') {
+                            updatedLobbyMap.value.tiles[tile].status = 'inaccessible';
+                          }
+                          if (tileType === 'escapepod' && props.playerState.role === 'alien') {
+                            updatedLobbyMap.value.tiles[tile].status = 'inaccessible';
+                          }
+                        });
+                        props.setMapSelection(updatedLobbyMap);
+                      }
                       setPrevSpace(currSpace);
                       props.socket.emit('turnSubmit', {
                         tile: currSpace,
@@ -582,7 +720,7 @@ function GameSession(props) {
                         style: {overflow: 'hidden', whiteSpace: 'nowrap'}
                       },
                       {dataField: 'tile', text: 'tile', editable: false},
-                      {dataField: 'event', text: 'Event', editable: false}
+                      {dataField: 'event', text: 'Event', editable: false, style: {overflow: 'hidden'}}
                     ]}
                     data={props.turnHistory}
                   />

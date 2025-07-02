@@ -32,6 +32,8 @@ import Lobbies from './Lobbies';
 import Lobby from './Lobby';
 import GameSession from './GameSession';
 
+import bgAudioFile from './darkesthour.wav';
+
 // import safeSpace from 'safe-space';
 // import dangerSpace from 'danger-space';
   
@@ -158,6 +160,10 @@ function App() {
       socket.emit('getMapList', {});
     });
 
+  var audio = document.getElementById("bgAudio");
+  audio.volume = 0.3;
+  audio.play();
+
     // Apparently can't send socket events in this event handler
     //window.addEventListener("beforeunload", handleUnload);
   }, []);
@@ -219,11 +225,14 @@ function App() {
       var event  = card.split(' - ')[0];
 
       if (event === 'attack') {
-        player = `${player} -> ${notificationEvent.targetPlayer}`
+        player = `${player} -> ${notificationEvent.targetPlayer}`;
+        // let updatedLobbyState = {...lobby};
+        // let playerIdx = 
+        // updatedLobbyState.players[]
       }
 
       if (card !== 'any') {
-        setTurnHistory([...turnHistory, {turn: turnHistory.length, event: event, tile: tile, player: player}]);
+        setTurnHistory([...turnHistory, {turn: turnHistory.length, event: event.replace('_', ' '), tile: tile, player: player}]);
       }
 
       if (card === 'attack') {
@@ -275,7 +284,39 @@ function App() {
             autoClose: 5000
           }
         );        
-      } else if (card === 'any') {
+      } else if (card === 'successful_escape') {
+        let updatedLobbyMap = {...lobbyMapSelection};
+        updatedLobbyMap.value.tiles[tile].status = 'inaccessible'; 
+        setLobbyMapSelection(updatedLobbyMap);
+        toast.success(
+          <div>
+            <h3>{player}</h3>
+            <hr/>
+            Escape pod at {tile} reached! {player} has escaped the space station to live another day!
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: 5000
+          }
+        );  
+      } else if (card === 'damaged_escapepod') { 
+        let updatedLobbyMap = {...lobbyMapSelection};
+        updatedLobbyMap.value.tiles[tile].status = 'inaccessible'; 
+        setLobbyMapSelection(updatedLobbyMap);
+        toast.error(
+          <div>
+            <h3>{player}</h3>
+            <hr/>
+            Escape pod at {tile} reached! Oh no, that escape pod is damaged and does not work! Run {player}!
+          </div>,
+          {
+            closeOnClick: false,
+            autoClose: 5000
+          }
+        );  
+      }  
+
+      else if (card === 'any') {
         setNoiseTileSelectEn(true);
         setUpdateToastID(toast.warning(
           noiseTileToast,
@@ -292,7 +333,7 @@ function App() {
 
       if (notificationEvent.state === 'playerEvent') {
         socket.emit('noiseInSector', {
-          state: card.includes('silence') ? 'silence' : 'noise',
+          state: card.includes('silence') ? 'silence' : card.includes('escape') ? card.replace('_', ' ') : 'noise',
           tile: card.includes('silence') ? '-' : tile,
           playerId: notificationEvent.playerId,
           numHeldCards: notificationEvent.playerNumHeldCards,
@@ -411,6 +452,7 @@ function App() {
               setOpenLobbyPanel={setOpenLobbyPanel}
               socket={socket}
               mapSelection={lobbyMapSelection}
+              setMapSelection={setLobbyMapSelection}
               gameCodeId={gameCodeId}
               playerName={tempUserName}
               playerState={playerState}
@@ -502,6 +544,12 @@ function App() {
         // })}
         draggablePercent={20}
       />
+
+      <audio loop autoplay id='bgAudio'> 
+        <source src={bgAudioFile} type="audio/wav" />
+        Your browser does not support the audio element.
+      </audio>
+
     </div>
   );
 }

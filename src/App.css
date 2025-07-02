@@ -74,37 +74,37 @@ body {
 
 
 .primaryButton {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
   color: black;
   box-shadow: none !important;
 }
 
 .primaryButton:hover, .primaryButton:focus, .primaryButton:disabled  {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
   color: black;
   box-shadow: none !important;
 }
 
 .primaryButton:active {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
   color: black;
   box-shadow: none !important;
   filter: brightness(.9);
 }
 
 .warningButton {
-  background-color: var(--color-warning);
-  border-color: var(--color-warning);
+  background-color: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
   color: black;
   box-shadow: none !important;
 }
 
 .warningButton:hover, .warningButton:focus, .warningButton:disabled {
-  background-color: var(--color-warning);
-  border-color: var(--color-warning);
+  background-color: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
   color: black;
   box-shadow: none !important;
 }
@@ -119,23 +119,23 @@ body {
 }
 
 .dangerButton {
-  background-color: var(--color-danger);
-  border-color: var(--color-danger);
+  background-color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
   color: black;
   box-shadow: none !important;
 }
 
 .dangerButton:hover, .dangerButton:focus, .dangerButton:disabled {
-  background-color: var(--color-danger);
-  border-color: var(--color-danger);
+  background-color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
   color: black;
   box-shadow: none !important;
 }
 
 
 .dangerButton:active {
-  background-color: var(--color-danger);
-  border-color: var(--color-danger);
+  background-color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
   color: black;
   box-shadow: none !important;
   filter: brightness(0.9);
@@ -143,7 +143,7 @@ body {
 
 
 .table {
-   --bs-table-bg: ; /* or --bs-table-bg: transparent; */
+   --bs-table-bg: transparent !important;
 }
 
 

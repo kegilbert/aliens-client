@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Navbar,
   Nav,
@@ -12,6 +12,7 @@ import {
   FormControl,
 } from 'react-bootstrap';
 import Select from 'react-select';
+import Konva from "konva";
 import {
   Stage,
   Layer,
@@ -56,6 +57,8 @@ function Editor(props) {
   // const [newMap, props.setNewMap] = useState({tiles: {}, meta: {}});
   const [mapEditor, setMapEditor] = useState(viewMode !== 'viewOnly');
   const [spaceSelector, setSpaceSelector] = useState(spaceOptions[0]);
+  const [sharedAngle, setSharedAngle] = useState(0);
+  const sharedAngleRef = useRef(sharedAngle);
   // const [mapOptions, setMapOptions] = useState([
   //   {label: 'New', value: newMap}
   // ]);
@@ -70,9 +73,18 @@ function Editor(props) {
     }
   });
 
+  useEffect(() => {
+    sharedAngleRef.current = sharedAngle;
+  }, [sharedAngle]);
+
+  const updateSharedAngle = () => {
+    setSharedAngle((sharedAngleRef.current + 5) % 360);
+  }
+
   // client-side
   useEffect(() => {
-    console.log(defaultMapNames);
+    const intervalId = window.setInterval(updateSharedAngle, 30);
+
     //setMapEditorMap(generateMapEditor());
     props.socket.on("connect", () => {  console.log(props.socket.id); });
     props.socket.on("responseMessage", (data) => {  console.log(data); });
@@ -83,6 +95,8 @@ function Editor(props) {
 
     props.socket.on("connect_error", (err) => {  console.log(`connect_error due to ${err.message}`);});
     // props.socket.emit('getMapList', {});
+    // Clean up the interval when the component unmounts
+    //return () => clearInterval(intervalId);
   }, []);
 
 
@@ -276,6 +290,43 @@ function Editor(props) {
     })
   };
 
+    const lineRef = useRef(null);
+    const [angle, setAngle] = useState(0); // State for the rotation angle
+
+    useEffect(() => {
+      const node = lineRef.current;
+      if (!node) return;
+
+      const animation = new Konva.Animation((frame) => {
+        // Increment the angle
+        let newAngle = angle + 1;
+
+        // Reset angle to 0 if it exceeds 360 for looping
+        if (newAngle > 360) {
+          newAngle = 0;
+        }
+
+        // Update the rotation
+        node.rotation(newAngle);
+
+        // Update the state to reflect the new angle
+        setAngle(newAngle);
+
+        // Redraw the layer
+        node.getLayer().batchDraw(); // Redraw the layer
+      }, node.getLayer()); // Attach the animation to the layer
+
+      animation.start(); // Start the animation
+
+      return () => {
+        animation.stop(); // Stop the animation on component unmount
+      };
+    }, [angle]); // Add angle as a dependency
+    // Calculate the end point of the line based on the angle
+  const radius = 100; // Adjust as needed
+  const endX = 300 + radius * Math.cos(angle * Math.PI / 180);
+  const endY = 300 + radius * Math.sin(angle * Math.PI / 180);
+
   const [stageScaleX, setStageScaleX] = useState(window.innerWidth < 1000 ? 0.6 : 1);
   const [stageScaleY, setStageScaleY] = useState(window.innerWidth < 1000 ? 0.6 : 1);
   return (
@@ -335,6 +386,36 @@ function Editor(props) {
                   generateMapEditor() :
                   //mapEditorMap :
                   generateMap()
+              }
+              { <>
+{/*              <Circle
+                x={300}
+                y={300}
+                radius={100}
+                stroke="pink"
+                strokeWidth={3}
+              />
+             <Line
+                points={[0, 0, 100, 0]} // Start at center, end calculated based on angle
+                stroke="pink"
+                x={300}
+                y={300}
+                rotation={sharedAngle}
+                strokeWidth={3}
+                shadowBlur={30}
+                shadowOffsetX={10}
+      />*/}
+{/*              <Line
+                ref={lineRef}
+                points={[300, 300, endX, endY]} // Start at center, end calculated based on angle
+                stroke="green"
+                strokeWidth={2}
+                rotation={angle} // Apply rotation based on state
+                //offset={{ x: 0, y: 0 }}
+                //x={300} // Center of rotation (should match the start point)
+                //y={300} // Center of rotation
+              />*/}
+              </>
               }
             </Layer>
             <Layer ref={layerRef}>
